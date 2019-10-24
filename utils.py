@@ -13,7 +13,12 @@ from tifffile import imsave
 from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.measurements import find_objects
 from six.moves import reduce
-
+from skimage.morphology import remove_small_objects
+from skimage.segmentation import  relabel_sequential
+from skimage.morphology import watershed
+from skimage.feature import peak_local_max
+from scipy import ndimage as ndi
+from matplotlib.pyplot import plot as plt
 def NormalizeFloat(x, pmin=3, pmax=99.8, axis=None, clip=False, eps=1e-20, dtype=np.float32):
     """Percentile-based image normalization."""
 
@@ -164,3 +169,18 @@ def save_tiff_imagej_compatible(file, img, axes, **imsave_kwargs):
 
     imsave_kwargs['imagej'] = True
     imsave(file, img, **imsave_kwargs)
+    
+def WatersheImage(image, binary_fill, kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, minsize = 10):
+    
+    if kernel_sizeZ is not None:
+        kernel_size = kernel_sizeX, kernel_sizeY, kernel_sizeZ
+    else:
+        kernel_size = kernel_sizeX, kernel_sizeY
+    
+    local_maxi = peak_local_max((image), indices=False, footprint=np.ones((kernel_size)),labels=binary_fill)
+    print(local_maxi)
+    markers = ndi.label(local_maxi)[0]
+    labels = watershed(-image, markers, mask=binary_fill)
+    nonormimg = remove_small_objects(labels, min_size= minsize, connectivity=8, in_place=False)
+    nonormimg, forward_map, inverse_map = relabel_sequential(nonormimg)    
+    return nonormimg
