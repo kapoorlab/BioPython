@@ -169,8 +169,21 @@ def save_tiff_imagej_compatible(file, img, axes, **imsave_kwargs):
 
     imsave_kwargs['imagej'] = True
     imsave(file, img, **imsave_kwargs)
+def WatershedImage(image,  kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, minsize = 10):
     
-def WatersheImage(image, binary_fill, kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, minsize = 10):
+    if kernel_sizeZ is not None:
+        kernel_size = kernel_sizeX, kernel_sizeY, kernel_sizeZ
+    else:
+        kernel_size = kernel_sizeX, kernel_sizeY
+    
+    local_maxi = peak_local_max((image), indices=False, footprint=np.ones((kernel_size)))
+    markers = ndi.label(local_maxi)[0]
+    labels = watershed(-image, markers)
+    nonormimg = remove_small_objects(labels, min_size= minsize, connectivity=8, in_place=False)
+    nonormimg, forward_map, inverse_map = relabel_sequential(nonormimg)    
+    return nonormimg
+    
+def WatershedImageMarker(image, binary_fill, kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, minsize = 10):
     
     if kernel_sizeZ is not None:
         kernel_size = kernel_sizeX, kernel_sizeY, kernel_sizeZ
@@ -178,7 +191,6 @@ def WatersheImage(image, binary_fill, kernel_sizeX, kernel_sizeY, kernel_sizeZ =
         kernel_size = kernel_sizeX, kernel_sizeY
     
     local_maxi = peak_local_max((image), indices=False, footprint=np.ones((kernel_size)),labels=binary_fill)
-    print(local_maxi)
     markers = ndi.label(local_maxi)[0]
     labels = watershed(-image, markers, mask=binary_fill)
     nonormimg = remove_small_objects(labels, min_size= minsize, connectivity=8, in_place=False)
