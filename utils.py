@@ -18,7 +18,23 @@ from skimage.segmentation import  relabel_sequential
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from scipy import ndimage as ndi
-from matplotlib.pyplot import plot as plt
+from scipy.ndimage.filters import median_filter, gaussian_filter
+
+def BackGroundCorrection(Image, sigma):
+    
+    Blur = gaussian_filter(Image.astype(float), sigma)
+    Corrected = Image - Blur
+    
+    return Corrected
+
+def MedianFilter(Image,sigma):
+    
+  
+    
+    MedianFilter = median_filter(Image.astype(float), sigma)
+
+    return MedianFilter
+
 def NormalizeFloat(x, pmin=3, pmax=99.8, axis=None, clip=False, eps=1e-20, dtype=np.float32):
     """Percentile-based image normalization."""
 
