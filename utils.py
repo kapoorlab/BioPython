@@ -19,22 +19,73 @@ from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from scipy import ndimage as ndi
 from scipy.ndimage.filters import median_filter, gaussian_filter
+from scipy.ndimage.morphology import  binary_dilation
+from skimage.filters import threshold_local, threshold_mean, threshold_otsu
+from skimage.feature import canny
+from skimage.filters import gaussian
 
-def BackGroundCorrection(Image, sigma):
+def BackGroundCorrection3D(Image, sigma):
     
-    Blur = gaussian_filter(Image.astype(float), sigma)
-    Corrected = Image - Blur
+    
+    Blur = np.zeros([Image.shape[0],Image.shape[1], Image.shape[2] ])
+    Corrected = np.zeros([Image.shape[0],Image.shape[1], Image.shape[2] ])
+    for j in range(0, Image.shape[0]): 
+     Blur[j,:] = gaussian(Image[j,:].astype(float), sigma)
+     Corrected[j,:] = Image[j,:] - Blur[j,:]
+    
     
     return Corrected
 
-def MedianFilter(Image,sigma):
+def BackGroundCorrection2D(Image, sigma):
     
-  
+    
+     Blur = gaussian(Image.astype(float), sigma)
+     
+     
+     Corrected = Image - Blur
+     
+     return Corrected
+
+def MedianFilter(Image,sigma):
     
     MedianFilter = median_filter(Image.astype(float), sigma)
 
     return MedianFilter
 
+
+def LocalThreshold3D(Image, boxsize, offset = 0):
+   
+    Binary = np.zeros([Image.shape[0],Image.shape[1], Image.shape[2] ])
+    for j in range(0, Image.shape[0]): 
+        adaptive_thresh = threshold_local(Image[j,:], boxsize, offset=offset)
+        Binary[j,:]= Image[j,:] > adaptive_thresh
+
+    return Binary
+
+def LocalThreshold2D(Image, boxsize, offset = 0):
+    
+    
+    adaptive_thresh = threshold_local(Image, boxsize, offset=offset)
+    Binary  = Image > adaptive_thresh
+
+    return Binary
+
+def Canny3D(Image, sigma = 0.01):
+    
+    Canny = np.zeros([Image.shape[0],Image.shape[1], Image.shape[2] ])
+    for j in range(0, Image.shape[0]): 
+       Canny[j,:] = canny(Image[j,:], sigma)
+    
+    return Canny
+
+
+def Canny(Image, sigma = 1):
+    
+    Canny = canny(Image, sigma)
+    
+    return Canny
+
+   
 def NormalizeFloat(x, pmin=3, pmax=99.8, axis=None, clip=False, eps=1e-20, dtype=np.float32):
     """Percentile-based image normalization."""
 
@@ -108,6 +159,38 @@ def _raise(e):
 def compose(*funcs):
     return lambda x: reduce(lambda f,g: g(f), funcs, x)
 
+
+
+
+def ConnecProbability(img, minsize):
+    
+    binary = np.zeros([img.shape[0], img.shape[1], img.shape[2]])
+    label = np.zeros([img.shape[0], img.shape[1], img.shape[2]])
+    for i in range(0, img.shape[0]):
+        
+      thresh = threshold_otsu(img[i,:])
+    
+      binary[i,:]  =  img[i,:] > thresh
+      
+      binary[i,:] = binary[i,:].astype('bool')
+      
+      binary[i,:] = binary_dilation(binary[i,:])
+      
+      label[i,:] = binary_fill_holes(binary[i,:] )
+      label[i,:] = remove_small_objects(label[i,:].astype('bool'), min_size=minsize, connectivity=4, in_place=False)
+     
+      label[i,:] = normalizeBinaryMinMax(label[i,:], 0, 255) 
+        
+    return label
+
+def normalizeBinaryMinMax(x, mi, ma,axis = None, clip = False, dtype = np.float32):
+        """ Normalizing an image between min and max """
+      
+        x = mi + ((x ) ) * ma
+        if clip:
+               x = np.clip(x, 0 , 1)
+        
+        return x 
 def axes_check_and_normalize(axes,length=None,disallowed=None,return_allowed=False):
     """
     S(ample), T(ime), C(hannel), Z, Y, X
