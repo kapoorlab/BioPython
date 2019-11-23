@@ -24,6 +24,62 @@ from skimage.filters import threshold_local, threshold_mean, threshold_otsu
 from skimage.feature import canny
 from skimage.filters import gaussian
 
+import napari
+
+def showImageNapari(Image):
+    viewer = napari.view_image(Image)
+    
+    return viewer
+
+def normalizeZeroOne(x):
+
+     x = x.astype('float32')
+
+     minVal = np.min(x)
+     maxVal = np.max(x)
+     
+     x = ((x-minVal) / (maxVal - minVal + 1.0e-20))
+     
+     return x
+    
+    
+    
+def MidSlices(Image, axis = 0, slices = 2):
+    
+    assert len(Image.shape) >=3
+    
+    SmallImage = Image.take(indices = range(Image.shape[axis]//2 - slices, Image.shape[axis]//2 + slices), axis = axis)
+    
+    MaxProject = np.amax(SmallImage, axis = axis)
+        
+    return MaxProject
+
+def MaxProjection(Image, axis = 0):
+    
+    assert len(Image.shape) >= 3
+    
+    MaxProject = np.amax(Image, axis = axis)
+        
+    return MaxProject
+
+
+def VarianceFilterTime(Image, kernel = (3,3)):
+    
+    
+    VarImage = np.zeros([Image.shape[0], Image.shape[1], Image.shape[2]])
+    MeanImage = np.zeros([Image.shape[0], Image.shape[1], Image.shape[2]])
+    MeanSqImage = np.zeros([Image.shape[0], Image.shape[1], Image.shape[2]])
+    for t in range(0,Image.shape[0]):
+       MeanImage[t,:] = ndi.uniform_filter(Image[t,:], kernel)
+       MeanSqImage[t,:] = ndi.uniform_filter(Image[t,:]**2, kernel)
+       VarImage[t,:] = MeanSqImage[t,:] - MeanImage[t,:]**2
+    
+    return VarImage
+
+
+    
+    
+
 def BackGroundCorrection3D(Image, sigma):
     
     
