@@ -13,9 +13,10 @@ from tifffile import imsave
 from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.measurements import find_objects
 from six.moves import reduce
+import matplotlib.pyplot as plt
 from skimage.morphology import remove_small_objects
 from skimage.segmentation import  relabel_sequential
-from skimage.morphology import watershed
+from skimage.morphology import watershed, remove_small_objects
 from skimage.feature import peak_local_max
 from scipy import ndimage as ndi
 from scipy.ndimage.filters import median_filter, gaussian_filter
@@ -26,10 +27,12 @@ from skimage.filters import gaussian
 
 import napari
 
-def showImageNapari(Image):
-    viewer = napari.view_image(Image)
+def showImageNapari(Image, rgb = False):
+    with napari.gui_qt():
+        myviewer=napari.Viewer()
+        myviewer.add_image(Image, rgb = rgb)
     
-    return viewer
+    
 
 def normalizeZeroOne(x):
 
@@ -42,8 +45,20 @@ def normalizeZeroOne(x):
      
      return x
     
+def BinaryDilation(Image, iterations = 1):
+
+    DilatedImage = binary_dilation(Image, iterations = iterations) 
     
+    return DilatedImage
     
+def SelectSlice(Image, axis = 0, slicenumber = 0):
+
+   assert len(Image.shape) >=3
+   
+   SmallImage = Image.take(indices = range(slicenumber - 1, slicenumber), axis = axis)
+   
+   return SmallImage
+   
 def MidSlices(Image, axis = 0, slices = 2):
     
     assert len(Image.shape) >=3
@@ -62,6 +77,16 @@ def MaxProjection(Image, axis = 0):
         
     return MaxProject
 
+def Embryo_plot(Time, Number):
+
+    
+    fig, ax = plt.subplots() 
+    ax.plot(Time, Number, '-b', alpha=0.6,
+        label='Embryos over time')
+    x_min, x_max = ax.get_xlim()
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Number')
+    plt.show()
 
 def VarianceFilterTime(Image, kernel = (3,3)):
     
@@ -109,22 +134,34 @@ def MedianFilter(Image,sigma):
     return MedianFilter
 
 
-def LocalThreshold3D(Image, boxsize, offset = 0):
+def LocalThreshold3D(Image, boxsize, offset = 0, size = 10):
    
     Binary = np.zeros([Image.shape[0],Image.shape[1], Image.shape[2] ])
+    Clean = np.zeros([Image.shape[0],Image.shape[1], Image.shape[2] ])
     for j in range(0, Image.shape[0]): 
         adaptive_thresh = threshold_local(Image[j,:], boxsize, offset=offset)
         Binary[j,:]= Image[j,:] > adaptive_thresh
+        Clean [j,:]=  remove_small_objects(Binary[j,:], min_size=size, connectivity=4, in_place=False)
+    return Clean
 
-    return Binary
-
-def LocalThreshold2D(Image, boxsize, offset = 0):
+def LocalThreshold2D(Image, boxsize, offset = 0, size = 10):
     
     
     adaptive_thresh = threshold_local(Image, boxsize, offset=offset)
     Binary  = Image > adaptive_thresh
+    Clean =  remove_small_objects(Binary, min_size=size, connectivity=4, in_place=False)
 
-    return Binary
+    return Clean
+
+def OtsuThreshold2D(Image, size = 10):
+    
+    
+    adaptive_thresh = threshold_otsu(Image)
+    Binary  = Image > adaptive_thresh
+    Clean =  remove_small_objects(Binary, min_size=size, connectivity=4, in_place=False)
+
+    return Clean
+
 
 def Canny3D(Image, sigma = 0.01):
     
