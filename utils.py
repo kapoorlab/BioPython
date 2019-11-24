@@ -14,6 +14,7 @@ from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.measurements import find_objects
 from six.moves import reduce
 import matplotlib.pyplot as plt
+from skimage import morphology
 from skimage.morphology import remove_small_objects
 from skimage.segmentation import  relabel_sequential
 from skimage.morphology import watershed, remove_small_objects
@@ -24,14 +25,19 @@ from scipy.ndimage.morphology import  binary_dilation
 from skimage.filters import threshold_local, threshold_mean, threshold_otsu
 from skimage.feature import canny
 from skimage.filters import gaussian
+from skimage import segmentation
 
 import napari
 
-def showImageNapari(Image, rgb = False):
+
+
+        
+        
+def showImageNapari(Raw,Image, rgb = False):
     with napari.gui_qt():
-        myviewer=napari.Viewer()
-        myviewer.add_image(Image, rgb = rgb)
-    
+        
+        viewer = napari.view_image(Image, rgb = rgb)
+        viewer.add_image(Raw)
     
 
 def normalizeZeroOne(x):
@@ -361,18 +367,20 @@ def save_tiff_imagej_compatible(file, img, axes, **imsave_kwargs):
 
     imsave_kwargs['imagej'] = True
     imsave(file, img, **imsave_kwargs)
-def WatershedImage(image,  kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, minsize = 10):
+def WatershedImage(image,   kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, min_distance = 10):
     
-    if kernel_sizeZ is not None:
-        kernel_size = kernel_sizeX, kernel_sizeY, kernel_sizeZ
-    else:
-        kernel_size = kernel_sizeX, kernel_sizeY
+    coordinates = peak_local_max(image, min_distance=min_distance)
     
-    local_maxi = peak_local_max((image), indices=False, footprint=np.ones((kernel_size)))
-    markers = ndi.label(local_maxi)[0]
-    labels = watershed(-image, markers)
-    nonormimg = remove_small_objects(labels, min_size= minsize, connectivity=8, in_place=False)
-    nonormimg, forward_map, inverse_map = relabel_sequential(nonormimg)    
+    #print(coordinates, image[coordinates[:,0], coordinates[:,1]])
+          
+    coordinates_int = np.round(coordinates).astype(int)
+    markers_raw = np.zeros_like(image)      
+    markers_raw[tuple(coordinates_int.T)] = 1 + np.arange(len(coordinates))
+    #raw markers might be in a little watershed "well".
+    markers = morphology.dilation(markers_raw, morphology.disk(5))
+
+    labels = segmentation.watershed(-image, markers)
+    nonormimg, forward_map, inverse_map = relabel_sequential(labels)    
     return nonormimg
     
 def WatershedImageMarker(image, binary_fill, kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, minsize = 10):
