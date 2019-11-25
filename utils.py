@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from skimage import morphology
 from skimage.morphology import remove_small_objects
 from skimage.segmentation import  relabel_sequential
-from skimage.morphology import watershed, remove_small_objects
+from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from scipy import ndimage as ndi
 from scipy.ndimage.filters import median_filter, gaussian_filter
@@ -30,8 +30,16 @@ from skimage import segmentation
 import napari
 
 
-
-        
+def Annotate(Raw, SegImage):
+    
+    with napari.gui_qt():
+        viewer = napari.view_image(Raw, name = 'ThreeDimage')
+        viewer.add_image(SegImage)
+        pts_layer = viewer.add_points(size = 5)
+        pts_layer.mode = 'add'
+    return pts_layer       
+          
+       
         
 def showImageNapari(Raw,Image, rgb = False):
     with napari.gui_qt():
