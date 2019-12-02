@@ -147,6 +147,15 @@ def MedianFilter(Image,sigma):
 
     return MedianFilter
 
+def count_white(Image):
+    
+    Area = 0
+    for j in range(0, Image.shape[0]):
+        for k in range(0, Image.shape[1]):
+           if Image[j,k] > 0:
+               Area = Area + 1
+
+    return Area
 
 def LocalThreshold3D(Image, boxsize, offset = 0, size = 10):
    
