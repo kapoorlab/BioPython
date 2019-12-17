@@ -26,9 +26,21 @@ from skimage.filters import threshold_local, threshold_mean, threshold_otsu
 from skimage.feature import canny
 from skimage.filters import gaussian
 from skimage import segmentation
+import scipy.stats as st
 
 import napari
 
+
+def ConvolveGaussian(array, size, sigma):
+    
+    interval = (2*sigma+1.)/(size)
+    x = np.linspace(-sigma-interval/2., sigma+interval/2., size+1)
+    kern1d = np.diff(st.norm.cdf(x))
+    kernel_raw = np.sqrt(np.outer(kern1d, kern1d))
+    kernel = kernel_raw/kernel_raw.sum()
+    convolvedarray = ndi.convolve(array, kernel)
+    
+    return convolvedarray
 
 def Annotate(Raw, SegImage):
     
