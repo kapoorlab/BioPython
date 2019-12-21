@@ -13,6 +13,8 @@ from tifffile import imsave
 from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.measurements import find_objects
 from six.moves import reduce
+from skimage.measure import label
+from skimage import measure
 import matplotlib.pyplot as plt
 from skimage import morphology
 from skimage.morphology import remove_small_objects
@@ -20,16 +22,37 @@ from skimage.segmentation import  relabel_sequential
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from scipy import ndimage as ndi
-from scipy.ndimage.filters import median_filter, gaussian_filter
+from scipy.ndimage.filters import median_filter, gaussian_filter, maximum_filter
 from scipy.ndimage.morphology import  binary_dilation
 from skimage.filters import threshold_local, threshold_mean, threshold_otsu
 from skimage.feature import canny
 from skimage.filters import gaussian
 from skimage import segmentation
 import scipy.stats as st
-
+from skimage.util import invert as invertimage
+from scipy import ndimage as ndi
 import napari
 
+
+def remove_big_objects(ar, max_size=6400, connectivity=1, in_place=False):
+    
+    out = ar.copy()
+    ccs = out
+
+    try:
+        component_sizes = np.bincount(ccs.ravel())
+    except ValueError:
+        raise ValueError("Negative value labels are not supported. Try "
+                         "relabeling the input with `scipy.ndimage.label` or "
+                         "`skimage.morphology.label`.")
+
+
+
+    too_big = component_sizes > max_size
+    too_big_mask = too_big[ccs]
+    out[too_big_mask] = 0
+
+    return out
 
 def ConvolveGaussian(array, size, sigma):
     
@@ -213,6 +236,19 @@ def Canny(Image, sigma = 1):
     
     return Canny
 
+def MakeLabels(image, metric='chessboard'):
+    
+  image = BinaryDilation(image)
+  image = invertimage(image)
+   
+  labelimage = label(image)  
+
+    
+  labelclean = remove_big_objects(labelimage, max_size = 5000)  
+
+  nonormimg, forward_map, inverse_map = relabel_sequential(labelclean) 
+  nonormimg = maximum_filter(nonormimg, 5)  
+  return nonormimg  
 
 def normalizeFloatZeroOne(x, pmin = 3, pmax = 99.8, axis = None, eps = 1e-20, dtype = np.float32):
     """Percentile based Normalization
@@ -337,7 +373,13 @@ def compose(*funcs):
     return lambda x: reduce(lambda f,g: g(f), funcs, x)
 
 
-
+def invert(image):
+    
+    MaxValue = np.max(image)
+    MinValue = np.min(image)
+    image[:] = MaxValue - image[:] + MinValue
+    
+    return image
 
 def ConnecProbability(img, minsize):
     
@@ -445,7 +487,7 @@ def save_tiff_imagej_compatible(file, img, axes, **imsave_kwargs):
 
     imsave_kwargs['imagej'] = True
     imsave(file, img, **imsave_kwargs)
-def WatershedImage(image,   kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, min_distance = 10):
+def WatershedImage(image,   kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, min_distance = 10, sign = 'minus'):
     
     coordinates = peak_local_max(image, min_distance=min_distance)
     
@@ -455,9 +497,12 @@ def WatershedImage(image,   kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, min
     markers_raw = np.zeros_like(image)      
     markers_raw[tuple(coordinates_int.T)] = 1 + np.arange(len(coordinates))
     #raw markers might be in a little watershed "well".
-    markers = morphology.dilation(markers_raw, morphology.disk(5))
+    markers = morphology.dilation(markers_raw, morphology.disk(10))
 
-    labels = segmentation.watershed(-image, markers)
+    if sign == 'minus':
+     labels = segmentation.watershed(-image, markers)
+    if sign == 'plus':
+     labels = segmentation.watershed(image, markers)   
     nonormimg, forward_map, inverse_map = relabel_sequential(labels)    
     return nonormimg
     
