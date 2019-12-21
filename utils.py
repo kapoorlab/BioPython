@@ -247,7 +247,7 @@ def MakeLabels(image, metric='chessboard'):
   labelclean = remove_big_objects(labelimage, max_size = 5000)  
 
   nonormimg, forward_map, inverse_map = relabel_sequential(labelclean) 
-  nonormimg = maximum_filter(nonormimg, 5)  
+  #nonormimg = maximum_filter(nonormimg, 5)  
   return nonormimg  
 
 def normalizeFloatZeroOne(x, pmin = 3, pmax = 99.8, axis = None, eps = 1e-20, dtype = np.float32):
