@@ -454,6 +454,36 @@ def fill_label_holes(lbl_img, **kwargs):
         mask_filled = binary_fill_holes(grown_mask,**kwargs)[shrink_slice]
         lbl_img_filled[sl][mask_filled] = i
     return lbl_img_filled
+ 
+def save_8bit_tiff_imagej_compatible(file, img, axes, **imsave_kwargs):
+    """Save image in ImageJ-compatible TIFF format.
+
+    Parameters
+    ----------
+    file : str
+        File name
+    img : numpy.ndarray
+        Image
+    axes: str
+        Axes of ``img``
+    imsave_kwargs : dict, optional
+        Keyword arguments for :func:`tifffile.imsave`
+
+    """
+    axes = axes_check_and_normalize(axes,img.ndim,disallowed='S')
+
+    # convert to imagej-compatible data type
+    t = np.uint8
+    t_new = t
+    img = img.astype(t_new, copy=False)
+    if t != t_new:
+        warnings.warn("Converting data type from '%s' to ImageJ-compatible '%s'." % (t, np.dtype(t_new)))
+
+    # move axes to correct positions for imagej
+        img = move_image_axes(img, axes, 'TZCYX', True)
+
+    imsave_kwargs['imagej'] = True
+    imsave(file, img, **imsave_kwargs)    
     
 def save_tiff_imagej_compatible(file, img, axes, **imsave_kwargs):
     """Save image in ImageJ-compatible TIFF format.
