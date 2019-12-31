@@ -31,7 +31,7 @@ from skimage import segmentation
 import scipy.stats as st
 from skimage.util import invert as invertimage
 from scipy import ndimage as ndi
-import napari
+#import napari
 
 
 def remove_big_objects(ar, max_size=6400, connectivity=1, in_place=False):
