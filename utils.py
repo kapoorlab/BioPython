@@ -236,7 +236,7 @@ def Canny(Image, sigma = 1):
     
     return Canny
 
-def MakeLabels(image, metric='chessboard'):
+def MakeLabels(image):
     
   image = BinaryDilation(image)
   image = invertimage(image)
