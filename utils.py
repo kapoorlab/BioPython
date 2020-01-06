@@ -236,6 +236,17 @@ def Canny(Image, sigma = 1):
     
     return Canny
 
+def WatershedLabels(image):
+   image = BinaryDilation(image)
+   image = invertimage(image)
+   labelimage = label(image)
+   labelimage = ndi.maximum_filter(labelimage, size=2)
+
+   nonormimg, forward_map, inverse_map = relabel_sequential(labelclean) 
+
+
+   return nonormimg 
+    
 def MakeLabels(image):
     
   image = BinaryDilation(image)
