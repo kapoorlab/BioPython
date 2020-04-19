@@ -1,8 +1,7 @@
-# @ImagePlus imp
 
 from ij import IJ
 from ij.plugin.frame import RoiManager
-from read_roi import read_roi_file
+
 
 try:
     from pathlib import Path
@@ -10,9 +9,9 @@ try:
 except (ImportError, AttributeError):
         from pathlib2 import Path
 def run():
-    roidir = '/Volumes/TRANSCEND/LauraLeopold/Rois/'
-    maskdir = '/Volumes/TRANSCEND/LauraLeopold/Mask/'
-    originaldir = '/Volumes/TRANSCEND/LauraLeopold/Original/'
+    roidir = '/Volumes/TRANSCEND/LauraLeopold/Wings-Rois/C/Roi/'
+    maskdir = '/Volumes/TRANSCEND/LauraLeopold/Wings-Rois/C/Mask/'
+    originaldir = '/Volumes/TRANSCEND/LauraLeopold/Wings-Rois/C/Original/'
     Raw_path = os.path.join(originaldir, '*tif')
     X = glob.glob(Raw_path)
     
