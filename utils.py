@@ -128,6 +128,14 @@ def MaxProjection(Image, axis = 0):
         
     return MaxProject
 
+def SumProjection(Image, axis = 0):
+    
+    assert len(Image.shape) >= 3
+    
+    MaxProject = np.sum(Image, axis = axis)
+        
+    return MaxProject
+
 def Embryo_plot(Time, Number):
 
     
