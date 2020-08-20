@@ -17,6 +17,7 @@ from skimage.measure import label
 from skimage import measure
 import matplotlib.pyplot as plt
 from skimage import morphology
+import scipy.ndimage.filters as filters
 from skimage.morphology import remove_small_objects
 from skimage.segmentation import  relabel_sequential
 from skimage.morphology import watershed
@@ -31,7 +32,8 @@ from skimage import segmentation
 import scipy.stats as st
 from skimage.util import invert as invertimage
 from scipy import ndimage as ndi
-#import napari
+import napari
+
 
 
 def remove_big_objects(ar, max_size=6400, connectivity=1, in_place=False):
@@ -236,7 +238,18 @@ def Canny(Image, sigma = 1):
     
     return Canny
 
-def MakeLabels(image, metric='chessboard'):
+def WatershedLabels(image):
+   image = BinaryDilation(image)
+   image = invertimage(image)
+   labelimage = label(image)
+   labelimage =  filters.maximum_filter(labelimage, 4) 
+
+   nonormimg, forward_map, inverse_map = relabel_sequential(labelimage) 
+
+
+   return nonormimg 
+    
+def MakeLabels(image):
     
   image = BinaryDilation(image)
   image = invertimage(image)
@@ -517,6 +530,14 @@ def save_tiff_imagej_compatible(file, img, axes, **imsave_kwargs):
 
     imsave_kwargs['imagej'] = True
     imsave(file, img, **imsave_kwargs)
+
+
+
+    
+    
+    
+
+
 def WatershedImage(image,   kernel_sizeX, kernel_sizeY, kernel_sizeZ = None, min_distance = 10, sign = 'minus'):
     
     coordinates = peak_local_max(image, min_distance=min_distance)
