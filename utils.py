@@ -9,12 +9,15 @@ Created on Thu Oct 24 17:10:31 2019
 import collections
 import numpy as np
 import warnings
+from skimage.transform import (hough_line, hough_line_peaks,
+                               probabilistic_hough_line)
 from tifffile import imsave
 from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.measurements import find_objects
 from six.moves import reduce
 from skimage.measure import label
 from skimage import measure
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from skimage import morphology
 import scipy.ndimage.filters as filters
@@ -33,7 +36,175 @@ import scipy.stats as st
 from skimage.util import invert as invertimage
 from scipy import ndimage as ndi
 import napari
+from scipy.signal import blackman
+from scipy.fftpack import fft, ifft, fftshift
+from scipy.fftpack import fftfreq
+import numpy as np
+from scipy.signal import find_peaks
+from numpy import mean, sqrt, square
+from matplotlib import cm
+from skimage.filters import threshold_otsu, threshold_mean
 
+def show_peak(onedimg, frequ, veto_frequ):
+
+    peaks, _ = find_peaks(onedimg)
+
+
+    above_threshfrequ = []
+    maxval = 0
+    reqpeak =0
+    for x in peaks:
+      if(frequ[x] > veto_frequ):
+        above_threshfrequ.append(x)
+    for i in range(0,len(above_threshfrequ)):
+      if onedimg[above_threshfrequ[i]] > maxval:
+        maxval = onedimg[above_threshfrequ[i]]
+        reqpeak = frequ[above_threshfrequ[i]] 
+        
+    frqY = reqpeak  
+    
+    return frqY
+
+def CrossCorrelationStrip(imageA, imageB):
+    
+    PointsSample = imageA.shape[1] 
+    stripA = imageA[:,0]
+    stripB = imageB[:,0]
+    stripCross = np.conjugate(stripA)* stripB
+    Initial = 0
+    x = []
+    for i in range(stripA.shape[0]):
+      x.append(i)
+    for i in range(imageA.shape[1]):
+        
+        stripB = imageB[:,i]
+        stripCross = np.conjugate(stripA)* stripB
+        PointsSample += stripCross
+        
+    return PointsSample, x  
+
+
+  
+def RMSStrip(imageA, cal):
+    rmstotal = np.empty(imageA.shape[0])
+    PointsSample = imageA.shape[1]
+    peri = range(0, int(np.round(imageA.shape[0] * cal)))
+    for i in range(imageA.shape[0] - 1):
+        stripA = imageA[i,:]
+        RMS = sqrt(mean(square(stripA)))
+        rmstotal[i] = RMS
+        
+    return [rmstotal, peri]    
+
+def FFTStrip(imageA):
+    ffttotal = np.empty(imageA.shape)
+    PointsSample = imageA.shape[1] 
+    for i in range(imageA.shape[0]):
+        stripA = imageA[i,:]
+       
+        fftstrip = fftshift(fft(stripA))
+        ffttotal[i,:] = np.abs(fftstrip)
+    return ffttotal 
+
+def VelocityStrip(imageA, Xcalibration, Time_unit):
+    
+    diff = 0
+    count = 0
+    for i in range(imageA.shape[0] - 1):
+        
+        stripA = imageA[i,:]
+        stripB = imageA[i + 1,:]
+        diff = diff + abs(stripB - stripA)
+        count = count + 1
+    averagevelocity = diff/count    
+    averagevelocity = averagevelocity * Xcalibration/max(Time_unit,0)
+    return averagevelocity
+    
+    
+def PhaseDiffStrip(imageA):
+    diff = np.empty(imageA.shape)
+    value = np.empty(imageA.shape)
+    for i in range(imageA.shape[0] - 1):
+       
+        diff[i, :] = imageA[i,:] - imageA[i + 1, :]
+    return diff
+    
+def PhaseStrip(imageA):
+    ffttotal = np.empty(imageA.shape)
+    PointsSample = imageA.shape[1] 
+    for i in range(imageA.shape[0]):
+        stripA = imageA[i,:]
+        
+        fftstrip = (fft(stripA))
+        ffttotal[i,:] = np.angle(fftstrip)
+    return ffttotal
+
+
+def sumProjection(image):
+    sumPro = 0
+    time = range(0, image.shape[1])
+    time = np.asarray(time)
+    for i in range(image.shape[0]):
+        strip = image[i,:]
+        sumPro += np.abs(strip) 
+ 
+   
+    return [sumPro, time]
+
+def maxProjection(image):
+    time = range(0, image.shape[1])
+    time = np.asarray(time)
+         
+
+    return [np.amax(image, axis = 0), time]
+    
+#FFT along a strip
+def doFilterFFT(image,Time_unit, filter):
+   addedfft = 0 
+   PointsSample = image.shape[1] 
+   for i in range(image.shape[0]):
+      if filter == True:   
+       w = blackman(PointsSample)
+      if filter == False:
+       w = 1
+      strip = image[i,:]
+       
+      fftresult = fft(w * strip)
+      addedfft += np.abs(fftresult)  
+   #addedfft/=image.shape[0]
+   
+   
+   xf = fftfreq(PointsSample, Time_unit)
+   
+   
+   return addedfft[1:int(PointsSample//2)], xf[1:int(PointsSample//2)]
+
+
+
+def do2DFFT(image, Space_unit, Time_unit, filter):
+    fftresult = fft(image)
+    PointsT = image.shape[1]
+    PointsY = image.shape[0]
+    Tomega = fftfreq(PointsT, Time_unit)
+    Spaceomega = fftfreq(PointsY, Space_unit)
+    
+    return fftresult
+
+def do2DInverseFFT(image, Space_unit, Time_unit, filter):
+    fftresult = ifft(image)
+    PointsT = image.shape[1]
+    PointsY = image.shape[0]
+    Tomega = fftfreq(PointsT, Time_unit)
+    Spaceomega = fftfreq(PointsY, Space_unit)
+    
+    return fftresult
+def CrossCorrelation(imageA, imageB):
+    crosscorrelation = imageA
+    fftresultA = fftshift(fft(imageA))
+    fftresultB = fftshift(fft(imageB))
+    multifft = fftresultA * np.conj(fftresultB)
+    crosscorrelation = fftshift(ifft(multifft))
+    return np.abs(crosscorrelation) 
 
 
 def remove_big_objects(ar, max_size=6400, connectivity=1, in_place=False):
@@ -506,42 +677,121 @@ def save_8bit_tiff_imagej_compatible(file, img, axes, **imsave_kwargs):
     imsave_kwargs['imagej'] = True
     imsave(file, img, **imsave_kwargs)    
     
-def save_tiff_imagej_compatible(file, img, axes, **imsave_kwargs):
-    """Save image in ImageJ-compatible TIFF format.
 
-    Parameters
-    ----------
-    file : str
-        File name
-    img : numpy.ndarray
-        Image
-    axes: str
-        Axes of ``img``
-    imsave_kwargs : dict, optional
-        Keyword arguments for :func:`tifffile.imsave`
 
-    """
-    axes = axes_check_and_normalize(axes,img.ndim,disallowed='S')
 
-    # convert to imagej-compatible data type
-    t = img.dtype
-    if   'float' in t.name: t_new = np.float32
-    elif 'uint'  in t.name: t_new = np.uint16 if t.itemsize >= 2 else np.uint8
-    elif 'int'   in t.name: t_new = np.int16
-    else:                   t_new = t
-    img = img.astype(t_new, copy=False)
-    if t != t_new:
-        warnings.warn("Converting data type from '%s' to ImageJ-compatible '%s'." % (t, np.dtype(t_new)))
 
-    # move axes to correct positions for imagej
-        img = move_image_axes(img, axes, 'TZCYX', True)
+def watershed_binary(image, size, gaussradius, kernel, peakpercent):
+ 
+ 
+ distance = ndi.distance_transform_edt(image)
 
-    imsave_kwargs['imagej'] = True
-    imsave(file, img, **imsave_kwargs)
+ gauss = gaussian_filter(distance, gaussradius)
 
+ local_maxi = peak_local_max(gauss, indices=False, footprint=np.ones((kernel, kernel)),
+                            labels=image)
+ markers = ndi.label(peakpercent * local_maxi)[0]
+ labels = watershed(-distance, markers, mask=image)
+
+
+ nonormimg = remove_small_objects(labels, min_size=size, connectivity=4, in_place=False)
+ nonormimg, forward_map, inverse_map = relabel_sequential(nonormimg)    
+ labels = nonormimg
+
+ return labels   
+def watershed_image_hough(image, size, targetdir, Label, Filename, Xcalibration,Time_unit):
+ distance = ndi.distance_transform_edt(image)
+
+ 
+ local_maxi = peak_local_max(distance, indices=False, footprint=np.ones((1, 1)),
+                            labels=image)
+ markers = ndi.label(local_maxi)[0]
+ labels = watershed(-distance, markers, mask=image)
+
+ nonormimg = remove_small_objects(labels, min_size=size, connectivity=4, in_place=False)
+ nonormimg, forward_map, inverse_map = relabel_sequential(nonormimg)    
+ labels = nonormimg
+
+
+ Velocity = []
+ Images = []
+ Besty0 = []
+ Besty1 = []
+ # loop over the unique labels returned by the Watershed
+ # algorithm
+ for label in tqdm(np.unique(labels)):
+      
+      if label== 0:
+            continue
+     
+      mask = np.zeros(image.shape, dtype="uint8")
+      mask[labels == label] = 1
+     
+          
+      h, theta, d = hough_line(mask)  
+      img, besty0, besty1, velocity = show_hough_linetransform(mask, h, theta, d, Xcalibration, 
+                               Time_unit,targetdir, Filename[0])
+
+      if np.abs(velocity) > 1.0E-5:  
+       Velocity.append(velocity)
+       Images.append(img)
+       Besty0.append(besty0)
+       Besty1.append(besty1)
+ return Velocity, Images, Besty0, Besty1    
+
+def doubleplot(imageA, imageB, titleA, titleB):
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+    ax = axes.ravel()
+    ax[0].imshow(imageA, cmap=cm.Spectral)
+    ax[0].set_title(titleA)
+    
+    ax[1].imshow(imageB, cmap=cm.Spectral)
+    ax[1].set_title(titleB)
+    
+    plt.tight_layout()
+    plt.show()    
+def show_hough_linetransform(img, accumulator, thetas, rhos, Xcalibration, Tcalibration,  save_path=None, File = None):
+    import matplotlib.pyplot as plt
 
 
     
+    bestpeak = 0
+    bestslope = 0
+    besty0 = 0
+    besty1 = 0
+    Est_vel = []
+    for _, angle, dist in zip(*hough_line_peaks(accumulator, thetas, rhos)):
+     y0 = (dist - 0 * np.cos(angle)) / np.sin(angle)
+     y1 = (dist - img.shape[1] * np.cos(angle)) / np.sin(angle)
+    
+     pixelslope =   -( np.cos(angle) / np.sin(angle) )
+     pixelintercept =  dist / np.sin(angle)  
+     slope =  -( np.cos(angle) / np.sin(angle) )* (Xcalibration / Tcalibration)
+     
+    #Draw high slopes
+     peak = 0;
+     for index, pixel in np.ndenumerate(img):
+            x, y = index
+            vals = img[x,y]
+            if  vals > 0:
+                peak+=vals
+                if peak >= bestpeak:
+                    bestpeak = peak
+                    bestslope = slope
+                    besty0 = y0
+                    besty1 = y1
+   
+    
+
+    if save_path is not None and File is not None:
+       plt.savefig(save_path + 'HoughPlot' + File + '.png')
+    if save_path is not None and File is None:
+        plt.savefig(save_path + 'HoughPlot' + '.png')
+  
+    
+   
+
+    return (img,besty0, besty1, bestslope)       
     
     
 
