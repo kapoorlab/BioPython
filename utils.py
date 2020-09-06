@@ -109,14 +109,12 @@ def FFTStrip(imageA):
 def VelocityStrip(imageA, Xcalibration, Time_unit):
     
     diff = 0
-    count = 0
     for i in range(imageA.shape[0] - 1):
         
         stripA = imageA[i,:]
         stripB = imageA[i + 1,:]
         diff = diff + abs(stripB - stripA)
-        count = count + 1
-    averagevelocity = diff/count    
+    averagevelocity = diff
     averagevelocity = averagevelocity * Xcalibration/max(Time_unit,0)
     return averagevelocity
     
