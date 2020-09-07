@@ -110,21 +110,17 @@ def FFTStrip(imageA):
     
     
 
-def VelocityStrip(imageA, Xcalibration, Time_unit):
+def VelocityStrip(imageA, blocksize, Xcalibration):
     
-    diff = 0
-    count = 0
-    for i in range(0,imageA.shape[0] - 20, 10):
-        
-        stripA = mean(imageA[i:i+10,:])
-        stripB = mean(imageA[i + 10:i + 20,:])
-        diff = diff + abs(stripB - stripA)
-        count = count + 1
-    averagevelocity = diff/count    
     
-    averagevelocity = averagevelocity * Xcalibration/max(Time_unit,0)
-    return averagevelocity
-    
+   
+     BlockVelocity = []
+     for i in range(0, imageA.shape[0] - 2 * blocksize, blocksize):
+       blockmean = np.mean(imageA[i:i+blocksize,:], axis = 1)
+       blockvar = np.var(blockmean)
+       BlockVelocity.append([i, blockvar])
+
+     return BlockVelocity    
     
 def PhaseDiffStrip(imageA):
     diff = np.empty(imageA.shape)
@@ -432,6 +428,31 @@ def WatershedLabels(image):
 
 
    return nonormimg 
+
+def normalizeFloatZeroOne(x, pmin = 3, pmax = 99.8, axis = None, eps = 1e-20, dtype = np.float32):
+    """Percentile based Normalization
+    
+    Normalize patches of image before feeding into the network
+    
+    Parameters
+    ----------
+    x : np array Image patch
+    pmin : minimum percentile value for normalization
+    pmax : maximum percentile value for normalization
+    axis : axis along which the normalization has to be carried out
+    eps : avoid dividing by zero
+    dtype: type of numpy array, float 32 default
+    """
+    mi = np.percentile(x, pmin, axis = axis, keepdims = True)
+    ma = np.percentile(x, pmax, axis = axis, keepdims = True)
+    return normalizer(x, mi, ma, eps = eps, dtype = dtype)
+
+def CCLabels(image):
+   image = BinaryDilation(image)
+   labelimage = label(image)
+   labelimage = ndi.maximum_filter(labelimage, size=4)
+   
+   nonormimg, forward_map, inverse_map = relabel_sequential(labelimage)  
     
 def MakeLabels(image):
     
