@@ -115,12 +115,30 @@ def VelocityStrip(imageA, blocksize, Xcalibration):
     
    
      BlockVelocity = []
+     diffimageA = np.zeros([imageA.shape[0], imageA.shape[1]])
+     for i in range(0, imageA.shape[0] -  2):
+       StripA = (imageA[i:i+1,:])
+       
+       StripB = (imageA[i + 1:i+2,:])
+       diffimageA[i,:] = gaussian_filter(abs((StripB) - (StripA)),10)
+       
+       
+
+     return diffimageA
+    
+    
+
+def DiffVelocityStrip(imageA, blocksize, Xcalibration):
+    
+    
+   
+     BlockVelocity = []
      for i in range(0, imageA.shape[0] - 2 * blocksize, blocksize):
        blockmean = np.mean(imageA[i:i+blocksize,:], axis = 1)
-       blockvar = np.var(blockmean)
-       BlockVelocity.append([i, blockvar])
+      
+       BlockVelocity.append([i, mean(blockmean)])
 
-     return BlockVelocity    
+     return BlockVelocity      
     
 def PhaseDiffStrip(imageA):
     diff = np.empty(imageA.shape)
