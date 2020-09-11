@@ -120,7 +120,7 @@ def VelocityStrip(imageA, blocksize, Xcalibration):
        StripA = (imageA[i:i+1,:])
        
        StripB = (imageA[i + 1:i+2,:])
-       diffimageA[i,:] = gaussian_filter(abs((StripB) - (StripA)),10)
+       diffimageA[i,:] = ((StripB) - (StripA))
        
        
 
@@ -134,9 +134,9 @@ def DiffVelocityStrip(imageA, blocksize, Xcalibration):
    
      BlockVelocity = []
      for i in range(0, imageA.shape[0] - 2 * blocksize, blocksize):
-       blockmean = np.mean(imageA[i:i+blocksize,:], axis = 1)
+       blockmean = np.mean(imageA[i:i+blocksize,:])
       
-       BlockVelocity.append([i, mean(blockmean)])
+       BlockVelocity.append([i, blockmean])
 
      return BlockVelocity      
     
@@ -793,7 +793,22 @@ def doubleplot(imageA, imageB, titleA, titleB):
     ax[1].set_title(titleB)
     
     plt.tight_layout()
-    plt.show()    
+    plt.show() 
+    
+def tripleplot(imageA, imageB, imageC, titleA, titleB, titleC):
+    fig, axes = plt.subplots(1, 3, figsize=(15, 6))
+    ax = axes.ravel()
+    ax[0].imshow(imageA, cmap=cm.Spectral)
+    ax[0].set_title(titleA)
+    
+    ax[1].imshow(imageB, cmap=cm.Spectral)
+    ax[1].set_title(titleB)
+    
+    ax[2].imshow(imageC, cmap=cm.Spectral)
+    ax[2].set_title(titleC)
+    
+    plt.tight_layout()
+    plt.show()
 def show_hough_linetransform(img, accumulator, thetas, rhos, Xcalibration, Tcalibration,  save_path=None, File = None):
     import matplotlib.pyplot as plt
 
