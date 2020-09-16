@@ -18,6 +18,7 @@ from six.moves import reduce
 from skimage.measure import label
 from skimage import measure
 from tqdm import tqdm
+from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 from skimage import morphology
 import scipy.ndimage.filters as filters
@@ -116,11 +117,9 @@ def VelocityStrip(imageA, blocksize, Xcalibration):
    
      BlockVelocity = []
      diffimageA = np.zeros([imageA.shape[0], imageA.shape[1]])
-     for i in range(0, imageA.shape[0] -  2):
-       StripA = (imageA[i:i+1,:])
-       
-       StripB = (imageA[i + 1:i+2,:])
-       diffimageA[i,:] = ((StripB) - (StripA))
+     for i in range(0, imageA.shape[1] -  2):
+      
+       diffimageA[:,i] = abs(imageA[:,i + 1] - imageA[:,i])
        
        
 
