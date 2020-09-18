@@ -37,6 +37,7 @@ import scipy.stats as st
 from skimage.util import invert as invertimage
 from scipy import ndimage as ndi
 import napari
+from skimage.metrics import mean_squared_error
 from scipy.signal import blackman
 from scipy.fftpack import fft, ifft, fftshift
 from scipy.fftpack import fftfreq
@@ -119,7 +120,7 @@ def VelocityStrip(imageA, blocksize, Xcalibration):
      diffimageA = np.zeros([imageA.shape[0], imageA.shape[1]])
      for i in range(0, imageA.shape[1] -  2):
       
-       diffimageA[:,i] = abs(imageA[:,i + 1] - imageA[:,i])
+       diffimageA[:,i] = (imageA[:,i + 1] -  imageA[:,i]) 
        
        
 
@@ -132,12 +133,12 @@ def DiffVelocityStrip(imageA, blocksize, Xcalibration):
     
    
      BlockVelocity = []
-     for i in range(0, imageA.shape[0] - 2 * blocksize, blocksize):
-       blockmean = np.mean(imageA[i:i+blocksize,:])
+     blockmean = np.zeros(imageA.shape[0])
+     for i in range(0, imageA.shape[1]):
+       blockmean[i] = np.mean(imageA[:,i])
       
-       BlockVelocity.append([i, blockmean])
 
-     return BlockVelocity      
+     return blockmean      
     
 def PhaseDiffStrip(imageA):
     diff = np.empty(imageA.shape)
@@ -349,7 +350,15 @@ def VarianceFilterTime(Image, kernel = (3,3)):
     
     return VarImage
 
-
+def VarianceFilter(Image, kernel = (3,3)):
+    
+    
+ 
+    MeanImage = ndi.uniform_filter(Image, kernel)
+    MeanSqImage = ndi.uniform_filter(Image**2, kernel)
+    VarImage = MeanSqImage - MeanImage**2
+    
+    return VarImage
     
     
 
@@ -742,7 +751,7 @@ def watershed_binary(image, size, gaussradius, kernel, peakpercent):
  labels = nonormimg
 
  return labels   
-def watershed_image_hough(image, size, targetdir, Label, Filename, Xcalibration,Time_unit):
+def watershed_image_hough(image,  Xcalibration,Time_unit):
  distance = ndi.distance_transform_edt(image)
 
  
@@ -751,7 +760,7 @@ def watershed_image_hough(image, size, targetdir, Label, Filename, Xcalibration,
  markers = ndi.label(local_maxi)[0]
  labels = watershed(-distance, markers, mask=image)
 
- nonormimg = remove_small_objects(labels, min_size=size, connectivity=4, in_place=False)
+ nonormimg = remove_small_objects(labels, min_size=5, connectivity=4, in_place=False)
  nonormimg, forward_map, inverse_map = relabel_sequential(nonormimg)    
  labels = nonormimg
 
@@ -773,14 +782,14 @@ def watershed_image_hough(image, size, targetdir, Label, Filename, Xcalibration,
           
       h, theta, d = hough_line(mask)  
       img, besty0, besty1, velocity = show_hough_linetransform(mask, h, theta, d, Xcalibration, 
-                               Time_unit,targetdir, Filename[0])
+                               Time_unit)
 
       if np.abs(velocity) > 1.0E-5:  
        Velocity.append(velocity)
        Images.append(img)
        Besty0.append(besty0)
        Besty1.append(besty1)
- return Velocity, Images, Besty0, Besty1    
+ return Velocity    
 
 def doubleplot(imageA, imageB, titleA, titleB):
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
