@@ -11,6 +11,7 @@ import numpy as np
 import warnings
 from skimage.transform import (hough_line, hough_line_peaks,
                                probabilistic_hough_line)
+from scipy.fftpack import fftfreq
 from tifffile import imsave
 from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.measurements import find_objects
@@ -98,25 +99,40 @@ def RMSStrip(imageA, cal):
         
     return [rmstotal, peri]    
 
-def FFTStrip(imageA):
+def FFTStrip(imageA, Time_unit):
     ffttotal = np.empty(imageA.shape)
+    PointsSample = imageA.shape[1]
+    addedfft = 0 
+    xf = fftfreq(PointsSample, Time_unit)         
     for i in range(imageA.shape[0]):
         stripA = imageA[i,:]
        
         fftstrip = fftshift(fft(stripA))
         ffttotal[i,:] = np.abs(fftstrip)
-    return ffttotal 
+        addedfft += np.abs(fft(stripA))
+        
+    return ffttotal, addedfft[0:int(PointsSample//2)], xf[0:int(PointsSample//2)]
 
-def FFTSpaceStrip(imageA):
+
+def FFTSpaceStrip(imageA, Xcalibration):
     ffttotal = np.empty(imageA.shape)
+    Blocks = []
+    addedfft = 0 
+    PointsSample = imageA.shape[0]
+    xf = fftfreq(PointsSample, Xcalibration)         
     for i in range(imageA.shape[1]):
+       
         stripA = imageA[:,i]
        
         fftstrip = fftshift(fft(stripA))
         ffttotal[:,i] = np.abs(fftstrip)
-    return ffttotal
+        addedfft += np.abs(fft(stripA))
+        
+        
+    return ffttotal, addedfft[0:int(PointsSample//2)], xf[0:int(PointsSample//2)]
     
-    
+
+   
 
 def VelocityStrip(imageA, blocksize, Xcalibration):
     
