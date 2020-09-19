@@ -119,6 +119,7 @@ def FFTSpaceStrip(imageA, Xcalibration):
     Blocks = []
     addedfft = 0 
     PointsSample = imageA.shape[0]
+    
     xf = fftfreq(PointsSample, Xcalibration)         
     for i in range(imageA.shape[1]):
        
