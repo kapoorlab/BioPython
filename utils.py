@@ -103,6 +103,7 @@ def FFTStrip(imageA, Time_unit):
     ffttotal = np.empty(imageA.shape)
     PointsSample = imageA.shape[1]
     addedfft = 0 
+    Blocks = []
     xf = fftfreq(PointsSample, Time_unit)         
     for i in range(imageA.shape[0]):
         stripA = imageA[i,:]
@@ -110,8 +111,9 @@ def FFTStrip(imageA, Time_unit):
         fftstrip = fftshift(fft(stripA))
         ffttotal[i,:] = np.abs(fftstrip)
         addedfft += np.abs(fft(stripA))
+        Blocks.append(np.abs(fft(stripA))[0:int(PointsSample//2)])
         
-    return ffttotal, addedfft[0:int(PointsSample//2)], xf[0:int(PointsSample//2)]
+    return ffttotal, addedfft[0:int(PointsSample//2)], xf[0:int(PointsSample//2)], Blocks
 
 
 def FFTSpaceStrip(imageA, Xcalibration):
@@ -128,9 +130,9 @@ def FFTSpaceStrip(imageA, Xcalibration):
         fftstrip = fftshift(fft(stripA))
         ffttotal[:,i] = np.abs(fftstrip)
         addedfft += np.abs(fft(stripA))
+        Blocks.append(np.abs(fft(stripA))[0:int(PointsSample//2)])
         
-        
-    return ffttotal, addedfft[0:int(PointsSample//2)], xf[0:int(PointsSample//2)]
+    return ffttotal, addedfft[0:int(PointsSample//2)], xf[0:int(PointsSample//2)], Blocks
     
 
    
