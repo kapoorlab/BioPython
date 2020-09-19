@@ -100,7 +100,6 @@ def RMSStrip(imageA, cal):
 
 def FFTStrip(imageA):
     ffttotal = np.empty(imageA.shape)
-    PointsSample = imageA.shape[1] 
     for i in range(imageA.shape[0]):
         stripA = imageA[i,:]
        
@@ -108,7 +107,14 @@ def FFTStrip(imageA):
         ffttotal[i,:] = np.abs(fftstrip)
     return ffttotal 
 
-
+def FFTSpaceStrip(imageA):
+    ffttotal = np.empty(imageA.shape)
+    for i in range(imageA.shape[1]):
+        stripA = imageA[:,i]
+       
+        fftstrip = fftshift(fft(stripA))
+        ffttotal[:,i] = np.abs(fftstrip)
+    return ffttotal
     
     
 
@@ -118,9 +124,10 @@ def VelocityStrip(imageA, blocksize, Xcalibration):
    
      BlockVelocity = []
      diffimageA = np.zeros([imageA.shape[0], imageA.shape[1]])
-     for i in range(0, imageA.shape[1] -  2):
-      
-       diffimageA[:,i] = (imageA[:,i + 1] -  imageA[:,i]) 
+     for i in range(0, imageA.shape[1] -  2 * blocksize):
+       meanA = np.mean(imageA[:,i:i+blocksize], axis = 1)
+       meanB = np.mean(imageA[:,i + blocksize:i + 2 * blocksize], axis = 1)
+       diffimageA[:,i] = abs(meanB -  meanA) 
        
        
 
@@ -133,12 +140,12 @@ def DiffVelocityStrip(imageA, blocksize, Xcalibration):
     
    
      BlockVelocity = []
-     blockmean = np.zeros(imageA.shape[0])
-     for i in range(0, imageA.shape[1]):
-       blockmean[i] = np.mean(imageA[:,i])
+     for i in range(0, imageA.shape[0] - 2 * blocksize, blocksize):
+       blockmean = np.mean(imageA[i:i+blocksize,:])
       
+       BlockVelocity.append([i, blockmean])
 
-     return blockmean      
+     return BlockVelocity      
     
 def PhaseDiffStrip(imageA):
     diff = np.empty(imageA.shape)
