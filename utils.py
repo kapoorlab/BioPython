@@ -48,6 +48,9 @@ from numpy import mean, sqrt, square
 from matplotlib import cm
 from skimage.filters import threshold_otsu, threshold_mean
 
+
+
+
 def show_peak(onedimg, frequ, veto_frequ):
 
     peaks, _ = find_peaks(onedimg)
