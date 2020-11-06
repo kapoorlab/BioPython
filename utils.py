@@ -47,7 +47,7 @@ from scipy.signal import find_peaks
 from numpy import mean, sqrt, square
 from matplotlib import cm
 from skimage.filters import threshold_otsu, threshold_mean
-
+from skimage.metrics import structural_similarity as ssim
 
 
 
@@ -141,39 +141,76 @@ def FFTSpaceStrip(imageA, Xcalibration):
     
     
     
-def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd):
+def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Xcalibration):
     
     AnteriorVelocity = []
     PosteriorVelocity = []
-    TimeList = []
-    for i in range(0, image.shape[1] - 1):
+    FrequAnteriorList = []
+    FrequPosteriorList = []
+    
+    PointsSampleAnterior = image[AnteriorStart:AnteriorEnd,:].shape[0]
+    xfAnterior = fftfreq(PointsSampleAnterior, Xcalibration)
+    
+    PointsSamplePosterior = image[PosteriorStart:PosteriorEnd,:].shape[0]
+    xfPosterior = fftfreq(PointsSamplePosterior, Xcalibration)
+    
+    for i in range(0, image.shape[1]):
+        
         
         AnteriorStrip = image[AnteriorStart:AnteriorEnd,i]
-        AnteriorVar = np.var(AnteriorStrip)
-        
-        
-        
+        FFTA =(np.abs((fft(AnteriorStrip))))
+        FFTA = FFTA/np.amax(FFTA)
         
         PosteriorStrip = image[PosteriorStart:PosteriorEnd,i]
-        PosteriorVar = np.var(PosteriorStrip)
+        FFTP = (np.abs((fft(PosteriorStrip))))
+        FFTP =FFTP/np.amax(FFTP)
         
-    
-        AnteriorNextStrip = image[AnteriorStart:AnteriorEnd,i + 1]
-        AnteriorNextVar = np.var(AnteriorNextStrip)
-        
-        
-        
-        
-        PosteriorNextStrip = image[PosteriorStart:PosteriorEnd,i + 1]
-        PosteriorNextVar = np.var(PosteriorNextStrip)
+        FrequAnteriorList.append(xfAnterior)
+        FrequPosteriorList.append(xfPosterior)
+        AnteriorVelocity.append(FFTA)
+        PosteriorVelocity.append(FFTP)
    
-        TimeList.append(i)
-        AnteriorVelocity.append(np.abs(AnteriorVar - AnteriorNextVar))
-        PosteriorVelocity.append(np.abs(PosteriorVar - PosteriorNextVar))
-        
-    return TimeList, AnteriorVelocity, PosteriorVelocity    
+
+            
+    return FrequAnteriorList, FrequPosteriorList, AnteriorVelocity, PosteriorVelocity    
         
 
+def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Tcalibration):
+    
+    AnteriorVelocity = []
+    PosteriorVelocity = []
+    FrequAnteriorList = []
+    FrequPosteriorList = []
+    
+    PointsSample = image.shape[1]
+    xf = fftfreq(PointsSample, Tcalibration)
+    
+    
+    for i in range(AnteriorStart, AnteriorEnd):
+        
+        
+        Strip = image[i,:]
+        FFTA =(np.abs((fft(Strip))))
+        FFTA = FFTA/np.amax(FFTA)
+        
+        
+        FrequAnteriorList.append(xf)
+        AnteriorVelocity.append(FFTA)
+   
+    for i in range(PosteriorStart, PosteriorEnd):
+        
+        
+        Strip = image[i,:]
+        FFTA =(np.abs((fft(Strip))))
+        FFTA = FFTA/np.amax(FFTA)
+        
+        
+        FrequPosteriorList.append(xf)
+        PosteriorVelocity.append(FFTA)
+            
+    return FrequAnteriorList, FrequPosteriorList, AnteriorVelocity, PosteriorVelocity    
+            
+    
 
 def VelocityStrip(imageA, blocksize, Xcalibration):
     
