@@ -51,9 +51,9 @@ from skimage.metrics import structural_similarity as ssim
 
 
 
-def show_peak(onedimg, frequ, veto_frequ):
+def show_peak(onedimg, frequ, veto_frequ, threshold = 0.005):
 
-    peaks, _ = find_peaks(onedimg)
+    peaks, _ = find_peaks(onedimg, threshold = threshold)
 
 
     above_threshfrequ = []
@@ -160,10 +160,15 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
         AnteriorStrip = image[AnteriorStart:AnteriorEnd,i]
         FFTA =(np.abs((fft(AnteriorStrip))))
         FFTA = FFTA/np.amax(FFTA)
+        if show_peak(FFTA, xfAnterior, 0) > 0:
+          print(show_peak(FFTA, xfAnterior, 0), 'Anterior')
         
         PosteriorStrip = image[PosteriorStart:PosteriorEnd,i]
         FFTP = (np.abs((fft(PosteriorStrip))))
         FFTP =FFTP/np.amax(FFTP)
+  
+        if show_peak(FFTP, xfPosterior, 0) > 0:
+           print(show_peak(FFTP, xfPosterior, 0), 'Posterior')
         
         FrequAnteriorList.append(xfAnterior)
         FrequPosteriorList.append(xfPosterior)
