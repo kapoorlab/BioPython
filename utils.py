@@ -138,7 +138,42 @@ def FFTSpaceStrip(imageA, Xcalibration):
     return ffttotal, addedfft[0:int(PointsSample//2)], xf[0:int(PointsSample//2)], Blocks
     
 
+    
+    
+    
+def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd):
+    
+    AnteriorVelocity = []
+    PosteriorVelocity = []
+    TimeList = []
+    for i in range(0, image.shape[1] - 1):
+        
+        AnteriorStrip = image[AnteriorStart:AnteriorEnd,i]
+        AnteriorVar = np.var(AnteriorStrip)
+        
+        
+        
+        
+        PosteriorStrip = image[PosteriorStart:PosteriorEnd,i]
+        PosteriorVar = np.var(PosteriorStrip)
+        
+    
+        AnteriorNextStrip = image[AnteriorStart:AnteriorEnd,i + 1]
+        AnteriorNextVar = np.var(AnteriorNextStrip)
+        
+        
+        
+        
+        PosteriorNextStrip = image[PosteriorStart:PosteriorEnd,i + 1]
+        PosteriorNextVar = np.var(PosteriorNextStrip)
    
+        TimeList.append(i)
+        AnteriorVelocity.append(np.abs(AnteriorVar - AnteriorNextVar))
+        PosteriorVelocity.append(np.abs(PosteriorVar - PosteriorNextVar))
+        
+    return TimeList, AnteriorVelocity, PosteriorVelocity    
+        
+
 
 def VelocityStrip(imageA, blocksize, Xcalibration):
     
