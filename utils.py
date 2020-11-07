@@ -306,22 +306,20 @@ def KymoMomentum(image,Xcalibration, threshold = 0.005):
         FrequList.append(xf)
         Velocity.append(FFT)
    
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-    ax = axes.ravel()
+
     
-    ax[0].plot( FrequList, np.log(Velocity), '-ro')
-    ax[0].set_xlabel('Momentum')
-    ax[0].set_ylabel('Amplitude')
-    ax[0].set_title('KymoKX')
-    ax[0].set_xlim([-0.1,1])
-    
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-    ax = axes.ravel()
+    plt.plot( FrequList, np.log(Velocity), '-ro')
+    plt.xlabel('Momentum')
+    plt.ylabel('Amplitude')
+    plt.title('KymoKX')
+    plt.xlim([-0.1,1])
+    plt.show()
     counts, bins = np.histogram(PeakValue)
-    ax[0].hist(bins[:-1], bins, weights=counts)
-    ax[0].set_xlabel('Momentum')
-    ax[0].set_ylabel('Amplitude')
-    ax[0].set_title('Peaks')        
+    plt.hist(bins[:-1], bins, weights=counts)
+    plt.xlabel('Momentum')
+    plt.ylabel('Amplitude')
+    plt.title('Peaks')        
+    plt.show()
     Momentum = bins[np.argmax(counts)]
     
     
@@ -350,22 +348,20 @@ def KymoTime(image, Tcalibration, threshold = 0.005):
         FrequList.append(xf)
         Velocity.append(FFT)
    
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-    ax = axes.ravel()
+
     
-    ax[0].plot( FrequList, np.log(Velocity), '-ro')
-    ax[0].set_xlabel('Frequency')
-    ax[0].set_ylabel('Amplitude')
-    ax[0].set_title('KymoWT')
-    ax[0].set_xlim([-0.001,0.01])
-    
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-    ax = axes.ravel()
+    plt.plot( FrequList, np.log(Velocity), '-ro')
+    plt.xlabel('Frequency')
+    plt.ylabel('Amplitude')
+    plt.title('KymoWT')
+    plt.xlim([-0.001,0.01])
+    plt.show()
     counts, bins = np.histogram(PeakValue)
-    ax[0].hist(bins[:-1], bins, weights=counts)
-    ax[0].set_xlabel('Frequency')
-    ax[0].set_ylabel('Amplitude')
-    ax[0].set_title('Peaks')        
+    plt.hist(bins[:-1], bins, weights=counts)
+    plt.xlabel('Frequency')
+    plt.ylabel('Amplitude')
+    plt.title('Peaks')
+    plt.show()        
     Frequency = bins[np.argmax(counts)]
     
     return Frequency      
