@@ -308,7 +308,7 @@ def KymoMomentum(image,Xcalibration, threshold = 0.005):
    
 
     
-    plt.plot( FrequList, np.log(Velocity), '-ro')
+    plt.plot( FrequList, np.log(Velocity))
     plt.xlabel('Momentum')
     plt.ylabel('Amplitude')
     plt.title('KymoKX')
@@ -350,11 +350,11 @@ def KymoTime(image, Tcalibration, threshold = 0.005):
    
 
     
-    plt.plot( FrequList, np.log(Velocity), '-ro')
+    plt.plot( FrequList, np.log(Velocity))
     plt.xlabel('Frequency')
     plt.ylabel('Amplitude')
     plt.title('KymoWT')
-    plt.xlim([-0.001,0.01])
+    plt.xlim([-0.01,0.1])
     plt.show()
     counts, bins = np.histogram(PeakValue)
     plt.hist(bins[:-1], bins, weights=counts)
