@@ -141,12 +141,14 @@ def FFTSpaceStrip(imageA, Xcalibration):
     
     
     
-def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Xcalibration):
+def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Xcalibration, threshold = 0.005):
     
     AnteriorVelocity = []
     PosteriorVelocity = []
     FrequAnteriorList = []
     FrequPosteriorList = []
+    PeakAnterior = []
+    PeakPosterior = []
     
     PointsSampleAnterior = image[AnteriorStart:AnteriorEnd,:].shape[0]
     xfAnterior = fftfreq(PointsSampleAnterior, Xcalibration)
@@ -160,15 +162,16 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
         AnteriorStrip = image[AnteriorStart:AnteriorEnd,i]
         FFTA =(np.abs((fft(AnteriorStrip))))
         FFTA = FFTA/np.amax(FFTA)
-        if show_peak(FFTA, xfAnterior, 0) > 0:
-          print(show_peak(FFTA, xfAnterior, 0), 'Anterior')
+        peakA = show_peak(FFTA, xfAnterior, 0, threshold = threshold)
+        if peakA > 0:
+          PeakAnterior.append(peakA)            
         
         PosteriorStrip = image[PosteriorStart:PosteriorEnd,i]
         FFTP = (np.abs((fft(PosteriorStrip))))
         FFTP =FFTP/np.amax(FFTP)
-  
-        if show_peak(FFTP, xfPosterior, 0) > 0:
-           print(show_peak(FFTP, xfPosterior, 0), 'Posterior')
+        peakP = show_peak(FFTP, xfPosterior, 0, threshold = threshold)
+        if peakP > 0:
+           PeakPosterior.append(peakP)
         
         FrequAnteriorList.append(xfAnterior)
         FrequPosteriorList.append(xfPosterior)
@@ -176,17 +179,33 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
         PosteriorVelocity.append(FFTP)
    
 
-            
-    return FrequAnteriorList, FrequPosteriorList, AnteriorVelocity, PosteriorVelocity    
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+    ax = axes.ravel()
+    counts, bins = np.histogram(PeakAnterior)
+    ax[0].hist(bins[:-1], bins, weights=counts)
+    ax[0].set_xlabel('Momentum')
+    ax[0].set_ylabel('Amplitude')
+    ax[0].set_title('Anterior')        
+    AnteriorMomentum = bins[np.argmax(counts)]
+    
+    counts, bins = np.histogram(PeakPosterior)
+    ax[1].hist(bins[:-1], bins, weights=counts)
+    ax[1].set_xlabel('Momentum')
+    ax[1].set_ylabel('Amplitude')
+    ax[1].set_title('Posterior') 
+    PosteriorMomentum = bins[np.argmax(counts)]
+    
+    return AnteriorMomentum, PosteriorMomentum,FrequAnteriorList, FrequPosteriorList, AnteriorVelocity, PosteriorVelocity    
         
 
-def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Tcalibration):
+def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Tcalibration, threshold = 0.005):
     
     AnteriorVelocity = []
     PosteriorVelocity = []
     FrequAnteriorList = []
     FrequPosteriorList = []
-    
+    PeakAnterior = []
+    PeakPosterior = []
     PointsSample = image.shape[1]
     xf = fftfreq(PointsSample, Tcalibration)
     
@@ -197,7 +216,9 @@ def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, Pos
         Strip = image[i,:]
         FFTA =(np.abs((fft(Strip))))
         FFTA = FFTA/np.amax(FFTA)
-        
+        peakA = show_peak(FFTA, xf, 0, threshold = threshold)
+        if peakA > 0:
+          PeakAnterior.append(peakA)   
         
         FrequAnteriorList.append(xf)
         AnteriorVelocity.append(FFTA)
@@ -206,14 +227,31 @@ def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, Pos
         
         
         Strip = image[i,:]
-        FFTA =(np.abs((fft(Strip))))
-        FFTA = FFTA/np.amax(FFTA)
-        
+        FFTP =(np.abs((fft(Strip))))
+        FFTP = FFTP/np.amax(FFTP)
+        peakP = show_peak(FFTP, xf, 0, threshold = threshold)
+        if peakP > 0:
+           PeakPosterior.append(peakP)
         
         FrequPosteriorList.append(xf)
-        PosteriorVelocity.append(FFTA)
+        PosteriorVelocity.append(FFTP)
             
-    return FrequAnteriorList, FrequPosteriorList, AnteriorVelocity, PosteriorVelocity    
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+    ax = axes.ravel()
+    counts, bins = np.histogram(PeakAnterior)
+    ax[0].hist(bins[:-1], bins, weights=counts)
+    ax[0].set_xlabel('Frequency')
+    ax[0].set_ylabel('Amplitude')
+    ax[0].set_title('Anterior')        
+    AnteriorFrequency = bins[np.argmax(counts)]
+    
+    counts, bins = np.histogram(PeakPosterior)
+    ax[1].hist(bins[:-1], bins, weights=counts)
+    ax[1].set_xlabel('Frequency')
+    ax[1].set_ylabel('Amplitude')
+    ax[1].set_title('Posterior')     
+    PosteriorFrequency = bins[np.argmax(counts)]
+    return AnteriorFrequency, PosteriorFrequency, FrequAnteriorList, FrequPosteriorList, AnteriorVelocity, PosteriorVelocity    
             
     
 
