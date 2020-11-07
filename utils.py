@@ -281,7 +281,94 @@ def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, Pos
     PosteriorFrequency = bins[np.argmax(counts)]
     return AnteriorFrequency, PosteriorFrequency  
             
+   
+def KymoMomentum(image,Xcalibration, threshold = 0.005):
     
+    Velocity = []
+    FrequList = []
+    PeakValue = []
+    
+    PointsSample = image.shape[0]
+    xf = fftfreq(PointsSample, Xcalibration)
+    
+    
+    for i in range(0, image.shape[1]):
+        
+        
+        Strip = image[:,i]
+        FFT =(np.abs((fft(Strip))))
+        FFT = FFT/np.amax(FFT)
+        peak = show_peak(FFT, xf, 0, threshold = threshold)
+        if peak > 0:
+          PeakValue.append(peak)            
+        
+        
+        FrequList.append(xf)
+        Velocity.append(FFT)
+   
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+    ax = axes.ravel()
+    
+    ax[0].plot( FrequList, np.log(Velocity), '-ro')
+    ax[0].set_xlabel('Momentum')
+    ax[0].set_ylabel('Amplitude')
+    ax[0].set_title('KymoKX')
+    ax[0].set_xlim([-0.1,1])
+    
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+    ax = axes.ravel()
+    counts, bins = np.histogram(PeakValue)
+    ax[0].hist(bins[:-1], bins, weights=counts)
+    ax[0].set_xlabel('Momentum')
+    ax[0].set_ylabel('Amplitude')
+    ax[0].set_title('Peaks')        
+    Momentum = bins[np.argmax(counts)]
+    
+    
+    return Momentum  
+        
+
+def KymoTime(image, Tcalibration, threshold = 0.005):
+    
+    Velocity = []
+    FrequList = []
+    PeakValue = []
+    PointsSample = image.shape[1]
+    xf = fftfreq(PointsSample, Tcalibration)
+    
+    
+    for i in range(0, image.shape[0]):
+        
+        
+        Strip = image[i,:]
+        FFT =(np.abs((fft(Strip))))
+        FFT = FFT/np.amax(FFT)
+        peak = show_peak(FFT, xf, 0, threshold = threshold)
+        if peak > 0:
+          PeakValue.append(peak)   
+        
+        FrequList.append(xf)
+        Velocity.append(FFT)
+   
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+    ax = axes.ravel()
+    
+    ax[0].plot( FrequList, np.log(Velocity), '-ro')
+    ax[0].set_xlabel('Frequency')
+    ax[0].set_ylabel('Amplitude')
+    ax[0].set_title('KymoWT')
+    ax[0].set_xlim([-0.001,0.01])
+    
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+    ax = axes.ravel()
+    counts, bins = np.histogram(PeakValue)
+    ax[0].hist(bins[:-1], bins, weights=counts)
+    ax[0].set_xlabel('Frequency')
+    ax[0].set_ylabel('Amplitude')
+    ax[0].set_title('Peaks')        
+    Frequency = bins[np.argmax(counts)]
+    
+    return Frequency      
 
 def VelocityStrip(imageA, blocksize, Xcalibration):
     
