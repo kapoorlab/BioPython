@@ -56,7 +56,17 @@ from matplotlib import cm
 from skimage.filters import threshold_otsu, threshold_mean
 from skimage.metrics import structural_similarity as ssim
 
+try:
+    from pathlib import Path
+    Path().expanduser()
+except (ImportError,AttributeError):
+    from pathlib2 import Path
 
+try:
+    import tempfile
+    tempfile.TemporaryDirectory
+except (ImportError,AttributeError):
+    from backports import tempfile
 
 def show_peak(onedimg, frequ, veto_frequ, threshold = 0.005):
 
@@ -234,10 +244,11 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
 def gaussian(x, amp, mu, std):
     return amp * exp(-(x-mu)**2 / std)
 
-def MSDAnalysis(CsvFile, nbins = 20):
-    
+def MSDAnalysis(CsvFile, savedir, nbins = 20):
+  
+  Path(savedir).mkdir(exist_ok=True) 
   dataset = pd.read_csv(CsvFile)
-    
+  Name = os.path.basename(os.path.splitext(CsvFile)[0])  
   displacement = dataset["Distance"][1:]
   displacement = np.asarray(displacement)
   time = dataset["Slice"][1:]  
@@ -260,7 +271,9 @@ def MSDAnalysis(CsvFile, nbins = 20):
   plt.plot(bins, Gauss.best_fit)
   plt.xlabel("Delta")
   plt.ylabel("Counts")
-  plt.show()  
+  plt.show()
+  df = pd.DataFrame([[Gauss.fit_report()]],columns =['GaussFit parameters'])
+  df.to_csv(savedir + Name + 'GaussFits' +  '.csv', index = False)   
   print(Gauss.fit_report())
     
 
