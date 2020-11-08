@@ -249,6 +249,7 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20):
   Path(savedir).mkdir(exist_ok=True) 
   dataset = pd.read_csv(CsvFile)
   Name = os.path.basename(os.path.splitext(CsvFile)[0])  
+  print(Name)
   displacement = dataset["Distance"][1:]
   displacement = np.asarray(displacement)
   time = dataset["Slice"][1:]  
