@@ -32,12 +32,19 @@ from scipy.ndimage.filters import median_filter, gaussian_filter, maximum_filter
 from scipy.ndimage.morphology import  binary_dilation
 from skimage.filters import threshold_local, threshold_mean, threshold_otsu
 from skimage.feature import canny
-from skimage.filters import gaussian
 from skimage import segmentation
 import scipy.stats as st
 from skimage.util import invert as invertimage
 from scipy import ndimage as ndi
 import napari
+import os
+import pandas as pd
+import glob
+from scipy.stats import norm
+from scipy.optimize import curve_fit
+from lmfit import Model
+from numpy import exp, loadtxt, pi, sqrt
+
 from skimage.metrics import mean_squared_error
 from scipy.signal import blackman
 from scipy.fftpack import fft, ifft, fftshift
@@ -223,6 +230,39 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
     
     return AnteriorMomentum, PosteriorMomentum  
         
+
+def gaussian(x, amp, mu, std):
+    return amp * exp(-(x-mu)**2 / std)
+
+def MSDAnalysis(CsvFile, nbins = 20):
+    
+  dataset = pd.read_csv(CsvFile)
+    
+  displacement = dataset["Distance"][1:]
+  displacement = np.asarray(displacement)
+  time = dataset["Slice"][1:]  
+  time = np.asarray(time)
+    
+  plt.plot(time, displacement)   
+
+  plt.xlabel("Time")
+  plt.ylabel("Displacement")
+  plt.show()   
+  
+
+  mean, std = norm.fit(displacement) 
+  
+  counts, bins = np.histogram(displacement, bins = nbins)
+  bins = bins[:-1]  
+  gmodel = Model(gaussian)
+  Gauss = gmodel.fit(counts, x=bins, amp=np.max(counts), mu=mean, std=std)
+  plt.hist(bins, bins, weights=counts)
+  plt.plot(bins, Gauss.best_fit)
+  plt.xlabel("Delta")
+  plt.ylabel("Counts")
+  plt.show()  
+  print(Gauss.fit_report())
+    
 
 def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Tcalibration, threshold = 0.005):
     
