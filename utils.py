@@ -177,17 +177,30 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
         FrequPosteriorList.append(xfPosterior)
         AnteriorVelocity.append(FFTA)
         PosteriorVelocity.append(FFTP)
-   
+    FrequAnteriorList = np.asarray(FrequAnteriorList)
+    AnteriorVelocity = np.asarray(AnteriorVelocity)  
+    
+    MaxVelocityAnterior = np.amax(AnteriorVelocity, axis = 0)
+    MaxFrequAnterior = np.amax(FrequAnteriorList, axis = 0) 
+    
+    FrequPosteriorList = np.asarray(FrequPosteriorList)
+    PosteriorVelocity = np.asarray(PosteriorVelocity)  
+    
+    MaxVelocityPosterior = np.amax(PosteriorVelocity, axis = 0)
+    MaxFrequPosterior = np.amax(FrequPosteriorList, axis = 0)  
+    
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
     ax = axes.ravel()
     
     ax[0].plot( FrequAnteriorList, np.log(AnteriorVelocity), '-ro')
+    ax[0].plot(MaxFrequAnterior, np.log(MaxVelocityAnterior))
     ax[0].set_xlabel('Momentum')
     ax[0].set_ylabel('Amplitude')
     ax[0].set_title('Anterior')
     ax[0].set_xlim([-0.1,1])
     
     ax[1].plot( FrequPosteriorList, np.log(PosteriorVelocity), '-ro')
+    ax[1].plot(MaxFrequPosterior, np.log(MaxVelocityPosterior))
     ax[1].set_xlabel('Momentum')
     ax[1].set_ylabel('Amplitude')
     ax[1].set_title('Posterior')
@@ -235,7 +248,11 @@ def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, Pos
         
         FrequAnteriorList.append(xf)
         AnteriorVelocity.append(FFTA)
-   
+    FrequAnteriorList = np.asarray(FrequAnteriorList)
+    AnteriorVelocity = np.asarray(AnteriorVelocity)  
+    
+    MaxVelocityAnterior = np.amax(AnteriorVelocity, axis = 0)
+    MaxFrequAnterior = np.amax(FrequAnteriorList, axis = 0) 
     for i in range(PosteriorStart, PosteriorEnd):
         
         
@@ -248,17 +265,23 @@ def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, Pos
         
         FrequPosteriorList.append(xf)
         PosteriorVelocity.append(FFTP)
-            
+    FrequPosteriorList = np.asarray(FrequPosteriorList)
+    PosteriorVelocity = np.asarray(PosteriorVelocity)  
+    
+    MaxVelocityPosterior = np.amax(PosteriorVelocity, axis = 0)
+    MaxFrequPosterior = np.amax(FrequPosteriorList, axis = 0)         
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
     ax = axes.ravel()
     
     ax[0].plot( FrequAnteriorList, np.log(AnteriorVelocity), '-ro')
+    ax[0].plot(MaxFrequAnterior, np.log(MaxVelocityAnterior))
     ax[0].set_xlabel('Frequency')
     ax[0].set_ylabel('Amplitude')
     ax[0].set_title('Anterior')
     ax[0].set_xlim([-0.001,0.01])
     
     ax[1].plot( FrequPosteriorList, np.log(PosteriorVelocity), '-ro')
+    ax[1].plot(MaxFrequPosterior, np.log(MaxVelocityPosterior))
     ax[1].set_xlabel('Frequency')
     ax[1].set_ylabel('Amplitude')
     ax[1].set_title('Posterior')
@@ -287,11 +310,10 @@ def KymoMomentum(image,Xcalibration, threshold = 0.005):
     Velocity = []
     FrequList = []
     PeakValue = []
-    
     PointsSample = image.shape[0]
     xf = fftfreq(PointsSample, Xcalibration)
     
-    
+
     for i in range(0, image.shape[1]):
         
         
@@ -305,10 +327,14 @@ def KymoMomentum(image,Xcalibration, threshold = 0.005):
         
         FrequList.append(xf)
         Velocity.append(FFT)
-   
-
+        
+    FrequList = np.asarray(FrequList)
+    Velocity = np.asarray(Velocity)  
     
+    MaxVelocity = np.amax(Velocity, axis = 0)
+    MaxFrequ = np.amax(FrequList, axis = 0) 
     plt.plot( FrequList, np.log(Velocity), 'g')
+    plt.plot(MaxFrequ, np.log(MaxVelocity))
     plt.xlabel('Momentum')
     plt.ylabel('Amplitude')
     plt.title('KymoKX')
@@ -349,8 +375,10 @@ def KymoTime(image, Tcalibration, threshold = 0.005):
         Velocity.append(FFT)
    
 
-    
+    MaxVelocity = np.amax(Velocity, axis = 0)
+    MaxFrequ = np.amax(FrequList, axis = 0)
     plt.plot( FrequList, np.log(Velocity), 'g')
+    plt.plot(MaxFrequ, np.log(MaxVelocity))
     plt.xlabel('Frequency')
     plt.ylabel('Amplitude')
     plt.title('KymoWT')
