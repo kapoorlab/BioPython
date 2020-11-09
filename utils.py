@@ -248,8 +248,9 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
   
   Path(savedir).mkdir(exist_ok=True) 
   dataset = pd.read_csv(CsvFile)
-  Name = os.path.basename(os.path.splitext(CsvFile)[0])  
-  print(Name)
+  Name = os.path.basename(os.path.splitext(CsvFile)[0])
+  print("Doing MSD analysis for file:")  
+  print("Experiment analysis for :", Name)
   displacementX = dataset["X"][1:]
   displacementX = np.asarray(displacementX)
   
