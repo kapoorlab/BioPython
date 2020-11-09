@@ -244,6 +244,11 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
 def gaussian(x, amp, mu, std):
     return amp * exp(-(x-mu)**2 / std)
 
+
+
+def BiModalgaussian(x, ampA, muA, stdA, ampB, muB, stdB):
+    return ampA * exp(-(x-muA)**2 / stdA) + ampB * exp(-(x-muB)**2 / stdB)
+
 def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
   
   Path(savedir).mkdir(exist_ok=True) 
@@ -274,6 +279,7 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
 
   plt.xlabel("Time")
   plt.ylabel("DisplacementX")
+  plt.savefig(savedir + Name + 'DeltaX' + '.png')
   plt.show()   
   
 
@@ -287,7 +293,9 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
   plt.plot(bins, Gauss.best_fit)
   plt.xlabel("DeltaX")
   plt.ylabel("Counts")
+  plt.savefig(savedir +Name+ 'HistDeltaX' + '.png')
   plt.show()
+  
   df = pd.DataFrame([[Gauss.fit_report()]],columns =['GaussFit parameters'])
   df.to_csv(savedir + Name + 'GaussFitsX' +  '.csv', index = False)   
   print('DeltaX',Gauss.fit_report())
@@ -296,6 +304,7 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
 
   plt.xlabel("Time")
   plt.ylabel("DisplacementY")
+  plt.savefig(savedir + Name + 'DeltaY' + '.png')
   plt.show()   
   
 
@@ -309,7 +318,9 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
   plt.plot(bins, Gauss.best_fit)
   plt.xlabel("DeltaY")
   plt.ylabel("Counts")
+  plt.savefig(savedir + Name +  'HistDeltaY' + '.png')
   plt.show()
+  
   df = pd.DataFrame([[Gauss.fit_report()]],columns =['GaussFit parameters'])
   df.to_csv(savedir + Name + 'GaussFitsY' +  '.csv', index = False)   
   print('DeltaY',Gauss.fit_report())
