@@ -244,7 +244,7 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
 def gaussian(x, amp, mu, std):
     return amp * exp(-(x-mu)**2 / std)
 
-def MSDAnalysis(CsvFile, savedir, nbins = 20):
+def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
   
   Path(savedir).mkdir(exist_ok=True) 
   dataset = pd.read_csv(CsvFile)
@@ -255,16 +255,16 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20):
   
   deltaX = np.zeros_like(displacementX)
 
-  for i in range(0, displacementX.shape[0] - 1):
+  for i in range(0, displacementX.shape[0] - average - 1):
       
-      deltaX[i] = displacementX[i + 1] - displacementX[i]
+      deltaX[i] = np.mean(displacementX[i + 1:i + average + 1]) - np.mean(displacementX[i:i+average])
   displacementY = dataset["Y"][1:]
   displacementY = np.asarray(displacementY)
   
   deltaY = np.zeros_like(displacementY)
-  for i in range(0, displacementX.shape[0] - 1):
+  for i in range(0, displacementY.shape[0] - 6):
       
-      deltaY[i] = displacementY[i + 1] - displacementY[i]
+      deltaY[i] = np.mean(displacementY[i + 1:i+average + 1]) - np.mean(displacementY[i:i+ average])
   
   time = dataset["Slice"][1:]  
   time = np.asarray(time)
