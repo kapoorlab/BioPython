@@ -158,7 +158,7 @@ def FFTSpaceStrip(imageA, Xcalibration):
     
     
     
-def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Xcalibration, threshold = 0.005):
+def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Xcalibration,savedir, threshold = 0.005):
     
     AnteriorVelocity = []
     PosteriorVelocity = []
@@ -172,7 +172,7 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
     
     PointsSamplePosterior = image[PosteriorStart:PosteriorEnd,:].shape[0]
     xfPosterior = fftfreq(PointsSamplePosterior, Xcalibration)
-    
+     
     for i in range(0, image.shape[1]):
         
         
@@ -237,7 +237,7 @@ def AnteriorPosterior(image, AnteriorStart, AnteriorEnd, PosteriorStart, Posteri
     ax[1].set_ylabel('Amplitude')
     ax[1].set_title('Posterior') 
     PosteriorMomentum = bins[np.argmax(counts)]
-    
+    fig.savefig(savedir + 'AnteriorPosteriorMomentum' + '.png')
     return AnteriorMomentum, PosteriorMomentum  
         
 
@@ -318,7 +318,7 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
   
     
 
-def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Tcalibration, threshold = 0.005):
+def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Tcalibration, savedir, threshold = 0.005):
     
     AnteriorVelocity = []
     PosteriorVelocity = []
@@ -390,16 +390,19 @@ def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, Pos
     ax[0].set_title('Anterior')        
     AnteriorFrequency = bins[np.argmax(counts)]
     
+    
     counts, bins = np.histogram(PeakPosterior)
     ax[1].hist(bins[:-1], bins, weights=counts)
     ax[1].set_xlabel('Frequency')
     ax[1].set_ylabel('Amplitude')
     ax[1].set_title('Posterior')     
     PosteriorFrequency = bins[np.argmax(counts)]
+    
+    fig.savefig(savedir + 'AnteriorPosteriorFrequency' + '.png')
     return AnteriorFrequency, PosteriorFrequency  
             
    
-def KymoMomentum(image,Xcalibration, threshold = 0.005):
+def KymoMomentum(image,Xcalibration,savedir, threshold = 0.005):
     
     Velocity = []
     FrequList = []
@@ -441,12 +444,12 @@ def KymoMomentum(image,Xcalibration, threshold = 0.005):
     plt.title('Peaks')        
     plt.show()
     Momentum = bins[np.argmax(counts)]
-    
+    plt.savefig(savedir + 'Momentum' + '.png')
     
     return Momentum  
         
 
-def KymoTime(image, Tcalibration, threshold = 0.005):
+def KymoTime(image, Tcalibration,savedir, threshold = 0.005):
     
     Velocity = []
     FrequList = []
@@ -485,7 +488,7 @@ def KymoTime(image, Tcalibration, threshold = 0.005):
     plt.title('Peaks')
     plt.show()        
     Frequency = bins[np.argmax(counts)]
-    
+    plt.savefig(savedir + 'Frequency' + '.png')
     return Frequency      
 
 def VelocityStrip(imageA, blocksize, Xcalibration):
@@ -1236,7 +1239,6 @@ def show_hough_linetransform(img, accumulator, thetas, rhos, Xcalibration, Tcali
    
 
     return (img,besty0, besty1, bestslope)       
-    
     
 
 
