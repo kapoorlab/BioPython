@@ -250,32 +250,71 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20):
   dataset = pd.read_csv(CsvFile)
   Name = os.path.basename(os.path.splitext(CsvFile)[0])  
   print(Name)
-  displacement = dataset["Distance"][1:]
-  displacement = np.asarray(displacement)
+  displacementX = dataset["X"][1:]
+  displacementX = np.asarray(displacementX)
+  
+  deltaX = np.zeros_like(displacementX)
+
+  for i in range(0, displacementX.shape[0] - 1):
+      
+      deltaX[i] = displacementX[i + 1] - displacementX[i]
+  displacementY = dataset["Y"][1:]
+  displacementY = np.asarray(displacementY)
+  
+  deltaY = np.zeros_like(displacementY)
+  for i in range(0, displacementX.shape[0] - 1):
+      
+      deltaY[i] = displacementY[i + 1] - displacementY[i]
+  
   time = dataset["Slice"][1:]  
   time = np.asarray(time)
     
-  plt.plot(time, displacement)   
+  plt.plot(time, deltaX)   
 
   plt.xlabel("Time")
-  plt.ylabel("Displacement")
+  plt.ylabel("DisplacementX")
   plt.show()   
   
 
-  mean, std = norm.fit(displacement) 
+  mean, std = norm.fit(deltaX) 
   
-  counts, bins = np.histogram(displacement, bins = nbins)
+  counts, bins = np.histogram(deltaX, bins = nbins)
   bins = bins[:-1]  
   gmodel = Model(gaussian)
   Gauss = gmodel.fit(counts, x=bins, amp=np.max(counts), mu=mean, std=std)
   plt.hist(bins, bins, weights=counts)
   plt.plot(bins, Gauss.best_fit)
-  plt.xlabel("Delta")
+  plt.xlabel("DeltaX")
   plt.ylabel("Counts")
   plt.show()
   df = pd.DataFrame([[Gauss.fit_report()]],columns =['GaussFit parameters'])
-  df.to_csv(savedir + Name + 'GaussFits' +  '.csv', index = False)   
-  print(Gauss.fit_report())
+  df.to_csv(savedir + Name + 'GaussFitsX' +  '.csv', index = False)   
+  print('DeltaX',Gauss.fit_report())
+  
+  plt.plot(time, deltaY)   
+
+  plt.xlabel("Time")
+  plt.ylabel("DisplacementY")
+  plt.show()   
+  
+
+  mean, std = norm.fit(deltaY) 
+  
+  counts, bins = np.histogram(deltaY, bins = nbins)
+  bins = bins[:-1]  
+  gmodel = Model(gaussian)
+  Gauss = gmodel.fit(counts, x=bins, amp=np.max(counts), mu=mean, std=std)
+  plt.hist(bins, bins, weights=counts)
+  plt.plot(bins, Gauss.best_fit)
+  plt.xlabel("DeltaY")
+  plt.ylabel("Counts")
+  plt.show()
+  df = pd.DataFrame([[Gauss.fit_report()]],columns =['GaussFit parameters'])
+  df.to_csv(savedir + Name + 'GaussFitsY' +  '.csv', index = False)   
+  print('DeltaY',Gauss.fit_report())
+  
+  
+  
     
 
 def AnteriorPosteriorTime(image, AnteriorStart, AnteriorEnd, PosteriorStart, PosteriorEnd, Tcalibration, threshold = 0.005):
