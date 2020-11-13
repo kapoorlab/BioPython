@@ -3,7 +3,7 @@
 """
 Created on Thu Oct 24 17:10:31 2019
 
-@author: aimachine
+@author: Varun Kapoor
 """
 
 import collections
@@ -253,6 +253,10 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
   
   Path(savedir).mkdir(exist_ok=True) 
   dataset = pd.read_csv(CsvFile)
+  print(dataset.keys()[0])
+  print(dataset.keys()[6])
+  print(dataset.keys())
+  print(len(dataset.keys()))
   Name = os.path.basename(os.path.splitext(CsvFile)[0])
   print("Doing MSD analysis for file:")  
   print("Experiment analysis for :", Name)
