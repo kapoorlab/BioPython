@@ -249,14 +249,11 @@ def gaussian(x, amp, mu, std):
 def BiModalgaussian(x, ampA, muA, stdA, ampB, muB, stdB):
     return ampA * exp(-(x-muA)**2 / stdA) + ampB * exp(-(x-muB)**2 / stdB)
 
-def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
+def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10, time_unit = 10, displayfit = False ):
   
   Path(savedir).mkdir(exist_ok=True) 
   dataset = pd.read_csv(CsvFile)
-  print(dataset.keys()[0])
-  print(dataset.keys()[6])
-  print(dataset.keys())
-  print(len(dataset.keys()))
+ 
   Name = os.path.basename(os.path.splitext(CsvFile)[0])
   print("Doing MSD analysis for file:")  
   print("Experiment analysis for :", Name)
@@ -276,39 +273,51 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
       
       deltaY[i] = np.mean(displacementY[i + 1:i+average + 1]) - np.mean(displacementY[i:i+ average])
   
-  time = dataset["Slice"][1:]  
+  time = (dataset["Slice"][1:]) * time_unit  
   time = np.asarray(time)
     
   plt.plot(time, deltaX)   
 
   plt.xlabel("Time")
   plt.ylabel("DisplacementX")
-  plt.savefig(savedir + Name + 'DeltaX' + '.png')
+  plt.savefig(savedir + Name + 'DisplacementX' + '.png')
   plt.show()   
   
 
   mean, std = norm.fit(deltaX) 
+  
+  df = pd.DataFrame([time, deltaX],columns =['time', 'displacementX'])
+  df.to_csv(savedir + Name + 'DisplacementXT' +  '.csv', index = False) 
+  
+  
+  df = pd.DataFrame([time, deltaY],columns =['time', 'displacementY'])
+  df.to_csv(savedir + Name + 'DisplacementYT' +  '.csv', index = False) 
   
   counts, bins = np.histogram(deltaX, bins = nbins)
   bins = bins[:-1]  
   gmodel = Model(gaussian)
   Gauss = gmodel.fit(counts, x=bins, amp=np.max(counts), mu=mean, std=std)
   plt.hist(bins, bins, weights=counts)
-  plt.plot(bins, Gauss.best_fit)
-  plt.xlabel("DeltaX")
+  if displayfit:
+      plt.plot(bins, Gauss.best_fit)
+  plt.xlabel("DisplacementX")
   plt.ylabel("Counts")
   plt.savefig(savedir +Name+ 'HistDeltaX' + '.png')
   plt.show()
   
+  df = pd.DataFrame([bins, counts, Gauss.best_fit],columns =['bins', 'counts', 'fit'])
+  df.to_csv(savedir + Name + 'HistDeltaX' +  '.csv', index = False)  
+  
+  
   df = pd.DataFrame([[Gauss.fit_report()]],columns =['GaussFit parameters'])
   df.to_csv(savedir + Name + 'GaussFitsX' +  '.csv', index = False)   
-  print('DeltaX',Gauss.fit_report())
+  print('DisplacementX',Gauss.fit_report())
   
   plt.plot(time, deltaY)   
 
   plt.xlabel("Time")
   plt.ylabel("DisplacementY")
-  plt.savefig(savedir + Name + 'DeltaY' + '.png')
+  plt.savefig(savedir + Name + 'DisplacementY' + '.png')
   plt.show()   
   
 
@@ -319,15 +328,20 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10):
   gmodel = Model(gaussian)
   Gauss = gmodel.fit(counts, x=bins, amp=np.max(counts), mu=mean, std=std)
   plt.hist(bins, bins, weights=counts)
-  plt.plot(bins, Gauss.best_fit)
-  plt.xlabel("DeltaY")
+  if displayfit:
+      plt.plot(bins, Gauss.best_fit)
+  plt.xlabel("DisplacementY")
   plt.ylabel("Counts")
   plt.savefig(savedir + Name +  'HistDeltaY' + '.png')
   plt.show()
   
+  df = pd.DataFrame([bins, counts, Gauss.best_fit],columns =['bins', 'counts', 'fit'])
+  df.to_csv(savedir + Name + 'HistDeltaY' +  '.csv', index = False)  
+  
+  
   df = pd.DataFrame([[Gauss.fit_report()]],columns =['GaussFit parameters'])
   df.to_csv(savedir + Name + 'GaussFitsY' +  '.csv', index = False)   
-  print('DeltaY',Gauss.fit_report())
+  print('DisplacementY',Gauss.fit_report())
   
   
   
