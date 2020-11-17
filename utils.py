@@ -269,7 +269,7 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10, time_unit = 10, disp
   displacementY = np.asarray(displacementY)
   
   deltaY = np.zeros_like(displacementY)
-  for i in range(0, displacementY.shape[0] - 6):
+  for i in range(0, displacementY.shape[0] - average - 1):
       
       deltaY[i] = np.mean(displacementY[i + 1:i+average + 1]) - np.mean(displacementY[i:i+ average])
   
@@ -285,12 +285,12 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10, time_unit = 10, disp
   
 
   mean, std = norm.fit(deltaX) 
-  
-  df = pd.DataFrame([time, deltaX],columns =['time', 'displacementX'])
+
+  df = pd.DataFrame(list(zip(time.tolist(), deltaX.tolist())), columns =['time', 'displacementX'])
   df.to_csv(savedir + Name + 'DisplacementXT' +  '.csv', index = False) 
+  df
   
-  
-  df = pd.DataFrame([time, deltaY],columns =['time', 'displacementY'])
+  df = pd.DataFrame(list(zip(time.tolist(), deltaY.tolist())),columns =['time', 'displacementY'])
   df.to_csv(savedir + Name + 'DisplacementYT' +  '.csv', index = False) 
   
   counts, bins = np.histogram(deltaX, bins = nbins)
@@ -305,7 +305,7 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10, time_unit = 10, disp
   plt.savefig(savedir +Name+ 'HistDeltaX' + '.png')
   plt.show()
   
-  df = pd.DataFrame([bins, counts, Gauss.best_fit],columns =['bins', 'counts', 'fit'])
+  df = pd.DataFrame(list(zip(bins.tolist(), counts.tolist(), Gauss.best_fit.tolist())),columns =['bins', 'counts', 'fit'])
   df.to_csv(savedir + Name + 'HistDeltaX' +  '.csv', index = False)  
   
   
@@ -335,7 +335,7 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10, time_unit = 10, disp
   plt.savefig(savedir + Name +  'HistDeltaY' + '.png')
   plt.show()
   
-  df = pd.DataFrame([bins, counts, Gauss.best_fit],columns =['bins', 'counts', 'fit'])
+  df = pd.DataFrame(list(zip(bins.tolist(), counts.tolist(), Gauss.best_fit.tolist())),columns =['bins', 'counts', 'fit'])
   df.to_csv(savedir + Name + 'HistDeltaY' +  '.csv', index = False)  
   
   
