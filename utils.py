@@ -284,7 +284,7 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10, time_unit = 10, disp
   plt.show()   
   
 
-  mean, std = norm.fit(deltaX) 
+  
 
   df = pd.DataFrame(list(zip(time.tolist(), deltaX.tolist())), columns =['time', 'displacementX'])
   df.to_csv(savedir + Name + 'DisplacementXT' +  '.csv', index = False) 
@@ -293,19 +293,21 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10, time_unit = 10, disp
   df = pd.DataFrame(list(zip(time.tolist(), deltaY.tolist())),columns =['time', 'displacementY'])
   df.to_csv(savedir + Name + 'DisplacementYT' +  '.csv', index = False) 
   
-  counts, bins = np.histogram(deltaX, bins = nbins)
-  bins = bins[:-1]  
+  # Histogram and Gaussian fit for deltaX
+  meanX, stdX = norm.fit(deltaX) 
+  countsX, binsX = np.histogram(deltaX, bins = nbins)
+  binsX = binsX[:-1]  
   gmodel = Model(gaussian)
-  Gauss = gmodel.fit(counts, x=bins, amp=np.max(counts), mu=mean, std=std)
-  plt.hist(bins, bins, weights=counts)
+  Gauss = gmodel.fit(countsX, x=binsX, amp=np.max(countsX), mu=meanX, std=stdX)
+  plt.hist(binsX, binsX, weights=countsX)
   if displayfit:
-      plt.plot(bins, Gauss.best_fit)
+      plt.plot(binsX, Gauss.best_fit)
   plt.xlabel("DisplacementX")
   plt.ylabel("Counts")
   plt.savefig(savedir +Name+ 'HistDeltaX' + '.png')
   plt.show()
   
-  df = pd.DataFrame(list(zip(bins.tolist(), counts.tolist(), Gauss.best_fit.tolist())),columns =['bins', 'counts', 'fit'])
+  df = pd.DataFrame(list(zip(binsX.tolist(), countsX.tolist(), Gauss.best_fit.tolist())),columns =['bins', 'counts', 'fit'])
   df.to_csv(savedir + Name + 'HistDeltaX' +  '.csv', index = False)  
   
   
@@ -320,28 +322,50 @@ def MSDAnalysis(CsvFile, savedir, nbins = 20, average = 10, time_unit = 10, disp
   plt.savefig(savedir + Name + 'DisplacementY' + '.png')
   plt.show()   
   
-
-  mean, std = norm.fit(deltaY) 
   
-  counts, bins = np.histogram(deltaY, bins = nbins)
-  bins = bins[:-1]  
+  # Histogram and Gaussian fit for deltaY
+  meanY, stdY = norm.fit(deltaY) 
+  countsY, binsY = np.histogram(deltaY, bins = nbins)
+  binsY = binsY[:-1]  
   gmodel = Model(gaussian)
-  Gauss = gmodel.fit(counts, x=bins, amp=np.max(counts), mu=mean, std=std)
-  plt.hist(bins, bins, weights=counts)
+  Gauss = gmodel.fit(countsY, x=binsY, amp=np.max(countsY), mu=meanY, std=stdY)
+  plt.hist(binsY, binsY, weights=countsY)
   if displayfit:
-      plt.plot(bins, Gauss.best_fit)
+      plt.plot(binsY, Gauss.best_fit)
   plt.xlabel("DisplacementY")
   plt.ylabel("Counts")
   plt.savefig(savedir + Name +  'HistDeltaY' + '.png')
   plt.show()
   
-  df = pd.DataFrame(list(zip(bins.tolist(), counts.tolist(), Gauss.best_fit.tolist())),columns =['bins', 'counts', 'fit'])
+  df = pd.DataFrame(list(zip(binsY.tolist(), countsY.tolist(), Gauss.best_fit.tolist())),columns =['bins', 'counts', 'fit'])
   df.to_csv(savedir + Name + 'HistDeltaY' +  '.csv', index = False)  
   
   
   df = pd.DataFrame([[Gauss.fit_report()]],columns =['GaussFit parameters'])
   df.to_csv(savedir + Name + 'GaussFitsY' +  '.csv', index = False)   
   print('DisplacementY',Gauss.fit_report())
+  
+  Totalmean = (meanX + meanY) / 2
+  Totalstd = (stdX + stdY) / 2
+  Totalcounts = countsX + countsY
+  Totalbins = binsX + binsY
+  gmodel = Model(gaussian)
+  Gauss = gmodel.fit(Totalcounts, x=Totalbins, amp=np.max(Totalcounts), mu=Totalmean, std=Totalstd)
+  plt.hist(Totalbins, Totalbins, weights=Totalcounts)
+  if displayfit:
+      plt.plot(Totalbins, Gauss.best_fit)
+  plt.xlabel("DisplacementTotal")
+  plt.ylabel("Counts")
+  plt.savefig(savedir + Name +  'HistDeltaTotal' + '.png')
+  plt.show()
+  
+  df = pd.DataFrame(list(zip(Totalbins.tolist(), Totalcounts.tolist(), Gauss.best_fit.tolist())),columns =['bins', 'counts', 'fit'])
+  df.to_csv(savedir + Name + 'HistDeltaTotal' +  '.csv', index = False)  
+  
+  
+  df = pd.DataFrame([[Gauss.fit_report()]],columns =['GaussFit parameters'])
+  df.to_csv(savedir + Name + 'GaussFitsTotal' +  '.csv', index = False)   
+  print('DisplacementTotal',Gauss.fit_report())
   
   
   
