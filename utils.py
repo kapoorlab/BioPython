@@ -59,7 +59,16 @@ from pathlib import Path
 from skimage.segmentation import find_boundaries
 from skimage.measure import label, regionprops
 from tifffile import imread, imwrite
-
+import cv2
+# font 
+font = cv2.FONT_HERSHEY_SIMPLEX 
+# org 
+org = (50, 50) 
+# fontScale 
+fontScale = 1
+ 
+color = (255, 255, 0) 
+thickness = 1
 def Distance(locationA, locationB, ndim):
     distance = 0
     for i in range(ndim-1):
@@ -67,8 +76,9 @@ def Distance(locationA, locationB, ndim):
         distance = distance + (locationA[i] - locationB[i]) * (locationA[i] - locationB[i])
     return math.sqrt(distance)    
 
-def Tsurff(Seg, theta):
+def Tsurff(Raw, Seg, theta):
     SegImage = imread(Seg)
+    RawImage = imread(Raw)
     Locationtheta = []
     if len(SegImage.shape)==2:
         ndim = 2
@@ -78,7 +88,9 @@ def Tsurff(Seg, theta):
         raise ValueError("Image dimension must be 2 or 3D")
         
     if ndim == 3:
-        for i in range(0,SegImage.shape[0]):
+        Clock = np.zeros_like(SegImage)
+        TimeObject = {}
+        for i in tqdm(range(0,SegImage.shape[0])):
             
             
             Locationtheta = {}
@@ -93,11 +105,14 @@ def Tsurff(Seg, theta):
             startpoint = toppoint
             arclength = theta * radius / 360
             Locationtheta[0] = toppoint
-            
-            for angle in range(theta, 360, theta):
-                       pointlinedistance = sys.float_info.max
-                       toppointdistance = sys.float_info.max 
-                       startpoint =  Locationtheta[angle - theta]
+            TimeAngleLocation = []
+            for angle in range(0, 360, theta):
+                
+                       pointlinedistance =  sys.float_info.max 
+                       if angle > 0:
+                          
+                          startpoint =  Locationtheta[angle - theta]
+                            
                        nearestY, nearestX = LineAngled(startpoint, radius, angle)
                        startpoint = (nearestY, nearestX)
                         
@@ -107,12 +122,31 @@ def Tsurff(Seg, theta):
                                    
                                     chosenlocation = location
                                     pointlinedistance = otherdistance
-
-
+                       Chosendistance = Distance(chosenlocation,centroid, ndim )
+                       TimeAngleLocation.append([angle, Chosendistance])
                        Locationtheta[angle] = chosenlocation
-                       print(Locationtheta) 
-
+                       cv2.circle(Clock[i,:], (int(chosenlocation[1]), int(chosenlocation[0])), 5,(255,0,0), thickness = -1 )
+                       cv2.circle(Clock[i,:], (int(centroid[1]), int(centroid[0])), 5,(255,0,0), thickness = -1 )
+                       cv2.putText(Clock[i,:], str(angle), (int(chosenlocation[1]), int(chosenlocation[0])), font,  
+                               fontScale, color, thickness, cv2.LINE_AA)
             
+            TimeObject[str(i)] = TimeAngleLocation
+            ListMaps = []
+            for givenangles in range(0, 360, theta):
+                      AngleMap = {}
+                      Dist = []
+                      for (time, value) in TimeObject.items():
+                           for angle, distance in value:
+                            
+                              if givenangles == angle:
+                                   Dist.append(distance)
+                           AngleMap[str(givenangles)] = Dist     
+                                 
+                      ListMaps.append(AngleMap)           
+            
+        
+        return ListMaps, Clock    
+                        
 def LineAngled(centroid, radius, theta):
     
     y = centroid[0] + radius * math.sin(math.radians(theta))
