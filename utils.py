@@ -44,7 +44,7 @@ from scipy.stats import norm
 from scipy.optimize import curve_fit
 from lmfit import Model
 from numpy import exp, loadtxt, pi, sqrt
-
+import math
 from skimage.metrics import mean_squared_error
 from scipy.signal import blackman
 from scipy.fftpack import fft, ifft, fftshift
@@ -59,8 +59,17 @@ from pathlib import Path
 from skimage.segmentation import find_boundaries
 from skimage.measure import label, regionprops
 from tifffile import imread, imwrite
-def Tsurff(Seg):
+
+def Distance(locationA, locationB, ndim):
+    distance = 0
+    for i in range(ndim-1):
+        
+        distance = distance + (locationA[i] - locationB[i]) * (locationA[i] - locationB[i])
+    return math.sqrt(distance)    
+
+def Tsurff(Seg, theta):
     SegImage = imread(Seg)
+    Locationtheta = []
     if len(SegImage.shape)==2:
         ndim = 2
     if len(SegImage.shape)==3:
@@ -71,21 +80,50 @@ def Tsurff(Seg):
     if ndim == 3:
         for i in range(0,SegImage.shape[0]):
             
+            
+            Locationtheta = {}
             TwoDImage = SegImage[i,:]
             SurfaceImage = find_boundaries(TwoDImage.astype('uint16'))
             centroid, coords = findCentroid(SurfaceImage.astype('uint16'))
             toppoint = findTop(SurfaceImage.astype('uint16'), centroid, coords)
+            bottompoint = findBottom(SurfaceImage.astype('uint16'), centroid, coords)
+            radius = Distance(centroid, toppoint, ndim)
+            #angle does not start from 0 to prevent identity
+            
+            startpoint = toppoint
+            arclength = theta * radius / 360
+            Locationtheta[0] = toppoint
+            
+            for angle in range(theta, 360, theta):
+                       pointlinedistance = sys.float_info.max
+                       toppointdistance = sys.float_info.max 
+                       startpoint =  Locationtheta[angle - theta]
+                       nearestY, nearestX = LineAngled(startpoint, radius, angle)
+                       startpoint = (nearestY, nearestX)
+                        
+                       for location in coords:
+                               otherdistance = Distance(startpoint, location, ndim)
+                               if otherdistance < pointlinedistance  :
+                                   
+                                    chosenlocation = location
+                                    pointlinedistance = otherdistance
+
+
+                       Locationtheta[angle] = chosenlocation
+                       print(Locationtheta) 
+
             
 def LineAngled(centroid, radius, theta):
     
-    y = centroid[0] + radius * math.cos(math.radians(theta))
-    x = centroid[1] + radius * math.sin(math.radians(theta))
-    
-    slope = (y - centroid[0]) / (x - centroid[1])
-    intercept = y - slope * x
-    
-    return slope, intercept
-    
+    y = centroid[0] + radius * math.sin(math.radians(theta))
+    x = centroid[1] + radius * math.cos(math.radians(theta))
+
+    return y, x
+
+def distancepointline(slope, intercept, location):
+
+    distance = abs(location[0] - slope * location[1] - intercept)/(math.sqrt(1+slope*slope))
+    return distance
 def findCentroid(image):
     
     Binary = image > 0
@@ -94,6 +132,19 @@ def findCentroid(image):
     centroid = props[0]['centroid']
     
     return centroid, coords
+
+def findBottom(image, centroid, coords):
+    
+    Binary = image > 0
+    maxY = sys.float_info.min
+    for allcord in coords:
+        #find the same x coordinate on the border as the center
+        if(int(allcord[1]) == int(centroid[1])):
+                if allcord[0] > maxY:
+                   maxY = allcord[0]
+                
+    bottompoint = (maxY, centroid[1])            
+    return bottompoint
 
 def findTop(image, centroid, coords):
     
