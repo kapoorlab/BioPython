@@ -5,7 +5,7 @@ Created on Thu Oct 24 17:10:31 2019
 
 @author: Varun Kapoor
 """
-
+import sys
 import collections
 import numpy as np
 import warnings
@@ -55,19 +55,48 @@ from numpy import mean, sqrt, square
 from matplotlib import cm
 from skimage.filters import threshold_otsu, threshold_mean
 from skimage.metrics import structural_similarity as ssim
+from pathlib import Path
+from skimage.segmentation import find_boundaries
+from skimage.measure import label, regionprops
+from tifffile import imread, imwrite
+def Tsurff(Seg):
+    SegImage = imread(Seg)
+    if len(SegImage.shape)==2:
+        ndim = 2
+    if len(SegImage.shape)==3:
+        ndim = 3
+    else:
+        raise ValueError("Image dimension must be 2 or 3D")
+        
+    if ndim == 3:
+        for i in range(0,SegImage.shape[0]):
+            
+            TwoDImage = SegImage[i,:]
+            SurfaceImage = find_boundaries(TwoDImage.astype('uint16'))
+            centroid, coords = findCentroid(SurfaceImage.astype('uint16'))
+            toppoint = findTop(SurfaceImage.astype('uint16'), centroid, coords)
+            
+def findCentroid(image):
+    
+    Binary = image > 0
+    props = regionprops(Binary.astype('uint16'))
+    coords = props[0]['coords']
+    centroid = props[0]['centroid']
+    
+    return centroid, coords
 
-try:
-    from pathlib import Path
-    Path().expanduser()
-except (ImportError,AttributeError):
-    from pathlib2 import Path
-
-try:
-    import tempfile
-    tempfile.TemporaryDirectory
-except (ImportError,AttributeError):
-    from backports import tempfile
-
+def findTop(image, centroid, coords):
+    
+    Binary = image > 0
+    minY = sys.float_info.max
+    for allcord in coords:
+        #find the same x coordinate on the border as the center
+        if(int(allcord[1]) == int(centroid[1])):
+                if allcord[0] < minY:
+                   minY = allcord[0]
+                
+    toppoint = (minY, centroid[1])            
+    return toppoint
 def show_peak(onedimg, frequ, veto_frequ, threshold = 0.005):
 
     peaks, _ = find_peaks(onedimg, threshold = threshold)
