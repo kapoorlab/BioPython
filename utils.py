@@ -76,7 +76,7 @@ def Distance(locationA, locationB, ndim):
         distance = distance + (locationA[i] - locationB[i]) * (locationA[i] - locationB[i])
     return math.sqrt(distance)    
 
-def Tsurff(Raw, Seg, theta):
+def Tsurff(Raw, Seg, theta, TimeUnit):
     SegImage = imread(Seg)
     RawImage = imread(Raw)
     Locationtheta = []
@@ -90,13 +90,16 @@ def Tsurff(Raw, Seg, theta):
     if ndim == 3:
         Clock = np.zeros_like(SegImage)
         TimeObject = {}
+        TimeList = []
         for i in tqdm(range(0,SegImage.shape[0])):
             
-            
+            TimeList.append(i * TimeUnit)
             Locationtheta = {}
             TwoDImage = SegImage[i,:]
             SurfaceImage = find_boundaries(TwoDImage.astype('uint16'))
             centroid, coords = findCentroid(SurfaceImage.astype('uint16'))
+            if i == 0:
+                startcentroid, startcoords = findCentroid(SurfaceImage.astype('uint16'))
             toppoint = findTop(SurfaceImage.astype('uint16'), centroid, coords)
             bottompoint = findBottom(SurfaceImage.astype('uint16'), centroid, coords)
             radius = Distance(centroid, toppoint, ndim)
@@ -122,7 +125,9 @@ def Tsurff(Raw, Seg, theta):
                                    
                                     chosenlocation = location
                                     pointlinedistance = otherdistance
-                       Chosendistance = Distance(chosenlocation,centroid, ndim )
+                                    
+                                    
+                       Chosendistance = Distance(chosenlocation, startcentroid, ndim )
                        TimeAngleLocation.append([angle, Chosendistance])
                        Locationtheta[angle] = chosenlocation
                        cv2.circle(Clock[i,:], (int(chosenlocation[1]), int(chosenlocation[0])), 5,(255,0,0), thickness = -1 )
@@ -132,6 +137,7 @@ def Tsurff(Raw, Seg, theta):
             
             TimeObject[str(i)] = TimeAngleLocation
             ListMaps = []
+            
             for givenangles in range(0, 360, theta):
                       AngleMap = {}
                       Dist = []
@@ -145,7 +151,7 @@ def Tsurff(Raw, Seg, theta):
                       ListMaps.append(AngleMap)           
             
         
-        return ListMaps, Clock    
+        return ListMaps, Clock, TimeList    
                         
 def LineAngled(centroid, radius, theta):
     
