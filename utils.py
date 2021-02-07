@@ -76,6 +76,16 @@ def Tsurff(Seg):
             centroid, coords = findCentroid(SurfaceImage.astype('uint16'))
             toppoint = findTop(SurfaceImage.astype('uint16'), centroid, coords)
             
+def LineAngled(centroid, radius, theta):
+    
+    y = centroid[0] + radius * math.cos(math.radians(theta))
+    x = centroid[1] + radius * math.sin(math.radians(theta))
+    
+    slope = (y - centroid[0]) / (x - centroid[1])
+    intercept = y - slope * x
+    
+    return slope, intercept
+    
 def findCentroid(image):
     
     Binary = image > 0
