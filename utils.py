@@ -102,32 +102,22 @@ def Tsurff(Raw, Seg, theta, TimeUnit):
                 startcentroid, startcoords = findCentroid(SurfaceImage.astype('uint16'))
             toppoint = findTop(SurfaceImage.astype('uint16'), centroid, coords)
             bottompoint = findBottom(SurfaceImage.astype('uint16'), centroid, coords)
-            radius = Distance(centroid, toppoint, ndim)
-            #angle does not start from 0 to prevent identity
+            
+           
             
             startpoint = toppoint
-            arclength = theta * radius / 360
             Locationtheta[0] = toppoint
             TimeAngleLocation = []
             for angle in range(0, 360, theta):
                 
                        pointlinedistance =  sys.float_info.max 
+                       if angle == 0:
+                            chosenlocation = startpoint
                        if angle > 0:
                           
-                          startpoint =  Locationtheta[angle - theta]
-                            
-                       nearestY, nearestX = LineAngled(startpoint, radius, angle)
-                       startpoint = (nearestY, nearestX)
-                        
-                       for location in coords:
-                               otherdistance = Distance(startpoint, location, ndim)
-                               if otherdistance < pointlinedistance  :
-                                   
-                                    chosenlocation = location
-                                    pointlinedistance = otherdistance
+                          chosenlocation = AngleList(coords,startpoint, startcentroid, angle)
                                     
-                                    
-                       Chosendistance = Distance(chosenlocation, startcentroid, ndim )
+                       Chosendistance = Distance(chosenlocation, centroid, ndim )
                        TimeAngleLocation.append([angle, Chosendistance])
                        Locationtheta[angle] = chosenlocation
                        cv2.circle(Clock[i,:], (int(chosenlocation[1]), int(chosenlocation[0])), 5,(255,0,0), thickness = -1 )
@@ -153,6 +143,35 @@ def Tsurff(Raw, Seg, theta, TimeUnit):
         
         return ListMaps, Clock, TimeList    
                         
+def AngleList(coords,startpoint, centroid, theta):
+    
+    pointA = startpoint
+    mintheta = sys.float_info.max
+    returnpoint = None
+    vector_1 = np.subtract(startpoint, centroid)
+
+    #Thetalist = [thetaangle for angle in range(0, 360, theta)]
+    for i in range(0, len(coords)):
+            
+            
+            pointB = coords[i]
+            vector_2 = np.subtract(pointB, centroid)
+
+            unit_vector_1 = vector_1 / np.linalg.norm(vector_1)
+            unit_vector_2 = vector_2 / np.linalg.norm(vector_2)
+            angle = (math.atan2(unit_vector_1[0],unit_vector_1[1]) - math.atan2(unit_vector_2[0],unit_vector_2[1]))* 180/math.pi
+
+            if angle < 0:
+                angle += 360.0
+                
+            if abs(angle - theta) < mintheta:
+                returnpoint = pointB
+                mintheta = abs(angle - theta)
+            if mintheta < 0.1:
+                break;
+                
+    return returnpoint 
+
 def LineAngled(centroid, radius, theta):
     
     y = centroid[0] + radius * math.sin(math.radians(theta))
@@ -164,6 +183,8 @@ def distancepointline(slope, intercept, location):
 
     distance = abs(location[0] - slope * location[1] - intercept)/(math.sqrt(1+slope*slope))
     return distance
+
+
 def findCentroid(image):
     
     Binary = image > 0
