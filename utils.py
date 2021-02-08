@@ -75,7 +75,10 @@ def Distance(locationA, locationB, ndim):
         
         distance = distance + (locationA[i] - locationB[i]) * (locationA[i] - locationB[i])
     return math.sqrt(distance)    
-
+def sortXY(elem):
+    
+    return elem[0]
+    
 def Tsurff(Raw, Seg, theta, TimeUnit):
     SegImage = imread(Seg)
     RawImage = imread(Raw)
@@ -98,6 +101,7 @@ def Tsurff(Raw, Seg, theta, TimeUnit):
             TwoDImage = SegImage[i,:]
             SurfaceImage = find_boundaries(TwoDImage.astype('uint16'))
             centroid, coords = findCentroid(SurfaceImage.astype('uint16'))
+            coords = sorted(coords, key = sortXY, reverse = False)
             if i == 0:
                 startcentroid, startcoords = findCentroid(SurfaceImage.astype('uint16'))
             toppoint = findTop(SurfaceImage.astype('uint16'), centroid, coords)
@@ -108,6 +112,7 @@ def Tsurff(Raw, Seg, theta, TimeUnit):
             startpoint = toppoint
             Locationtheta[0] = toppoint
             TimeAngleLocation = []
+            Thetalist = AngleList(coords,startpoint, startcentroid)
             for angle in range(0, 360, theta):
                 
                        pointlinedistance =  sys.float_info.max 
@@ -115,9 +120,9 @@ def Tsurff(Raw, Seg, theta, TimeUnit):
                             chosenlocation = startpoint
                        if angle > 0:
                           
-                          chosenlocation = AngleList(coords,startpoint, startcentroid, angle)
+                          chosenlocation = Thetalist[str(angle)]
                                     
-                       Chosendistance = Distance(chosenlocation, centroid, ndim )
+                       Chosendistance = Distance(chosenlocation, startcentroid, ndim )
                        TimeAngleLocation.append([angle, Chosendistance])
                        Locationtheta[angle] = chosenlocation
                        cv2.circle(Clock[i,:], (int(chosenlocation[1]), int(chosenlocation[0])), 5,(255,0,0), thickness = -1 )
@@ -136,21 +141,36 @@ def Tsurff(Raw, Seg, theta, TimeUnit):
                             
                               if givenangles == angle:
                                    Dist.append(distance)
-                           AngleMap[str(givenangles)] = Dist     
+                      AngleMap[str(givenangles)] = Dist     
                                  
                       ListMaps.append(AngleMap)           
             
         
         return ListMaps, Clock, TimeList    
+    
+def DistAverage(Distlist, frames = 2):
+    
+    Moving_Average = []
+    i = 0
+    while i < len(Distlist) - frames + 1:
+
+          this_window = Distlist[i:i + frames] 
+          window_average = sum(this_window) / frames
+          Moving_Average.append(window_average)
+          i = i + 1
+    for i in range(len(Distlist) - frames + 1,len(Distlist) ):
+        Moving_Average.append(window_average)
+            
+    return Moving_Average 
                         
-def AngleList(coords,startpoint, centroid, theta):
+def AngleList(coords,startpoint, centroid):
     
     pointA = startpoint
     mintheta = sys.float_info.max
     returnpoint = None
     vector_1 = np.subtract(startpoint, centroid)
 
-    #Thetalist = [thetaangle for angle in range(0, 360, theta)]
+    Thetalist = {}
     for i in range(0, len(coords)):
             
             
@@ -160,17 +180,15 @@ def AngleList(coords,startpoint, centroid, theta):
             unit_vector_1 = vector_1 / np.linalg.norm(vector_1)
             unit_vector_2 = vector_2 / np.linalg.norm(vector_2)
             angle = (math.atan2(unit_vector_1[0],unit_vector_1[1]) - math.atan2(unit_vector_2[0],unit_vector_2[1]))* 180/math.pi
+            
+            if angle <0:
+                angle+=360
+            
+            Thetalist[str(int(angle))] = pointB
+            
 
-            if angle < 0:
-                angle += 360.0
-                
-            if abs(angle - theta) < mintheta:
-                returnpoint = pointB
-                mintheta = abs(angle - theta)
-            if mintheta < 0.1:
-                break;
-                
-    return returnpoint 
+
+    return Thetalist 
 
 def LineAngled(centroid, radius, theta):
     
