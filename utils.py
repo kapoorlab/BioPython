@@ -112,17 +112,23 @@ def Tsurff(Raw, Seg, theta, TimeUnit):
             startpoint = toppoint
             Locationtheta[0] = toppoint
             TimeAngleLocation = []
-            Thetalist = AngleList(coords,startpoint, centroid)
+            Thetalist = AngleList(coords,startpoint, startcentroid)
             for angle in range(0, 360, theta):
                 
-                       pointlinedistance =  sys.float_info.max 
+                       pointlinedistance =  sys.float_info.min 
                        if angle == 0:
                             chosenlocation = startpoint
                        if angle > 0:
-                          
-                          chosenlocation = Thetalist[str(angle)]
+                          for (k,v) in Thetalist.items():
+                                point = Thetalist[k]
+                                if abs((float(k))-angle) < 1:
+                                    pointdist = Distance(point, centroid, ndim)
+                                    if pointdist > pointlinedistance:
+                                        pointlinedistance = pointdist
+                                        chosenlocation =  point
+                                
                                     
-                       Chosendistance = Distance(chosenlocation, centroid, ndim )
+                       Chosendistance = Distance(chosenlocation, startcentroid, ndim )
                        TimeAngleLocation.append([angle, Chosendistance])
                        Locationtheta[angle] = chosenlocation
                        cv2.circle(Clock[i,:], (int(chosenlocation[1]), int(chosenlocation[0])), 5,(255,0,0), thickness = -1 )
@@ -184,7 +190,7 @@ def AngleList(coords,startpoint, centroid):
             if angle <0:
                 angle+=360
             
-            Thetalist[str(int(round(angle)))] = pointB
+            Thetalist[str(angle)] = pointB
             
 
 
