@@ -99,13 +99,15 @@ def Tsurff(Raw, Seg, theta, TimeUnit):
             TimeList.append(i * TimeUnit)
             Locationtheta = {}
             TwoDImage = SegImage[i,:]
-            SurfaceImage = find_boundaries(TwoDImage.astype('uint16'))
+            SurfaceImage = find_boundaries(TwoDImage.astype('float32'))
+            
+           
             centroid, coords = findCentroid(SurfaceImage.astype('uint16'))
             coords = sorted(coords, key = sortXY, reverse = False)
             if i == 0:
                 startcentroid, startcoords = findCentroid(SurfaceImage.astype('uint16'))
-            toppoint = findTop(SurfaceImage.astype('uint16'), centroid, coords)
-            bottompoint = findBottom(SurfaceImage.astype('uint16'), centroid, coords)
+            toppoint = findTop(SurfaceImage.astype('uint16'), startcentroid, coords)
+            bottompoint = findBottom(SurfaceImage.astype('uint16'), startcentroid, coords)
             
            
             
