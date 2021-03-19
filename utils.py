@@ -5,7 +5,7 @@ Created on Thu Oct 24 17:10:31 2019
 
 @author: Varun Kapoor
 """
-
+import sys
 import collections
 import numpy as np
 import warnings
@@ -44,7 +44,7 @@ from scipy.stats import norm
 from scipy.optimize import curve_fit
 from lmfit import Model
 from numpy import exp, loadtxt, pi, sqrt
-
+import math
 from skimage.metrics import mean_squared_error
 from scipy.signal import blackman
 from scipy.fftpack import fft, ifft, fftshift
@@ -55,19 +55,196 @@ from numpy import mean, sqrt, square
 from matplotlib import cm
 from skimage.filters import threshold_otsu, threshold_mean
 from skimage.metrics import structural_similarity as ssim
+from pathlib import Path
+from skimage.segmentation import find_boundaries
+from skimage.measure import label, regionprops
+from tifffile import imread, imwrite
+import cv2
+# font 
+font = cv2.FONT_HERSHEY_SIMPLEX 
+# org 
+org = (50, 50) 
+# fontScale 
+fontScale = 1
+ 
+color = (255, 255, 0) 
+thickness = 1
+def Distance(locationA, locationB, ndim):
+    distance = 0
+    for i in range(ndim-1):
+        
+        distance = distance + (locationA[i] - locationB[i]) * (locationA[i] - locationB[i])
+    return math.sqrt(distance)    
+def sortXY(elem):
+    
+    return elem[0]
+    
+def Tsurff(Raw, Seg, theta, TimeUnit):
+    SegImage = imread(Seg)
+    RawImage = imread(Raw)
+    Locationtheta = []
+    if len(SegImage.shape)==2:
+        ndim = 2
+    if len(SegImage.shape)==3:
+        ndim = 3
+    else:
+        raise ValueError("Image dimension must be 2 or 3D")
+        
+    if ndim == 3:
+        Clock = np.zeros_like(SegImage)
+        TimeObject = {}
+        TimeList = []
+        for i in tqdm(range(0,SegImage.shape[0])):
+            
+            TimeList.append(i * TimeUnit)
+            Locationtheta = {}
+            TwoDImage = SegImage[i,:]
+            SurfaceImage = find_boundaries(TwoDImage.astype('float32'))
+            
+           
+            centroid, coords = findCentroid(SurfaceImage.astype('uint16'))
+            coords = sorted(coords, key = sortXY, reverse = False)
+            if i == 0:
+                startcentroid, startcoords = findCentroid(SurfaceImage.astype('uint16'))
+            toppoint = findTop(SurfaceImage.astype('uint16'), startcentroid, coords)
+            bottompoint = findBottom(SurfaceImage.astype('uint16'), startcentroid, coords)
+            
+           
+            
+            startpoint = toppoint
+            Locationtheta[0] = toppoint
+            TimeAngleLocation = []
+            Thetalist = AngleList(coords,startpoint, startcentroid)
+            for angle in range(0, 360, theta):
+                
+                       pointlinedistance =  sys.float_info.min 
+                       if angle == 0:
+                            chosenlocation = startpoint
+                       if angle > 0:
+                          for (k,v) in Thetalist.items():
+                                point = Thetalist[k]
+                                if abs((float(k))-angle) < 1:
+                                    pointdist = Distance(point, centroid, ndim)
+                                    if pointdist > pointlinedistance:
+                                        pointlinedistance = pointdist
+                                        chosenlocation =  point
+                                
+                                    
+                       Chosendistance = Distance(chosenlocation, startcentroid, ndim )
+                       TimeAngleLocation.append([angle, Chosendistance])
+                       Locationtheta[angle] = chosenlocation
+                       cv2.circle(Clock[i,:], (int(chosenlocation[1]), int(chosenlocation[0])), 5,(255,0,0), thickness = -1 )
+                       cv2.circle(Clock[i,:], (int(centroid[1]), int(centroid[0])), 5,(255,0,0), thickness = -1 )
+                       cv2.putText(Clock[i,:], str(angle), (int(chosenlocation[1]), int(chosenlocation[0])), font,  
+                               fontScale, color, thickness, cv2.LINE_AA)
+            
+            TimeObject[str(i)] = TimeAngleLocation
+            ListMaps = []
+            
+            for givenangles in range(0, 360, theta):
+                      AngleMap = {}
+                      Dist = []
+                      for (time, value) in TimeObject.items():
+                           for angle, distance in value:
+                            
+                              if givenangles == angle:
+                                   Dist.append(distance)
+                      AngleMap[str(givenangles)] = Dist     
+                                 
+                      ListMaps.append(AngleMap)           
+            
+        
+        return ListMaps, Clock, TimeList    
+    
+def DistAverage(Distlist, frames = 2):
+    
+    Moving_Average = []
+    i = 0
+    while i < len(Distlist) - frames + 1:
 
-try:
-    from pathlib import Path
-    Path().expanduser()
-except (ImportError,AttributeError):
-    from pathlib2 import Path
+          this_window = Distlist[i:i + frames] 
+          window_average = sum(this_window) / frames
+          Moving_Average.append(window_average)
+          i = i + 1
+    for i in range(len(Distlist) - frames + 1,len(Distlist) ):
+        Moving_Average.append(window_average)
+            
+    return Moving_Average 
+                        
+def AngleList(coords,startpoint, centroid):
+    
+    pointA = startpoint
+    mintheta = sys.float_info.max
+    returnpoint = None
+    vector_1 = np.subtract(startpoint, centroid)
 
-try:
-    import tempfile
-    tempfile.TemporaryDirectory
-except (ImportError,AttributeError):
-    from backports import tempfile
+    Thetalist = {}
+    for i in range(0, len(coords)):
+            
+            
+            pointB = coords[i]
+            vector_2 = np.subtract(pointB, centroid)
 
+            unit_vector_1 = vector_1 / np.linalg.norm(vector_1)
+            unit_vector_2 = vector_2 / np.linalg.norm(vector_2)
+            angle = (math.atan2(unit_vector_1[0],unit_vector_1[1]) - math.atan2(unit_vector_2[0],unit_vector_2[1]))* 180/math.pi
+            
+            if angle <0:
+                angle+=360
+            
+            Thetalist[str(angle)] = pointB
+            
+
+
+    return Thetalist 
+
+def LineAngled(centroid, radius, theta):
+    
+    y = centroid[0] + radius * math.sin(math.radians(theta))
+    x = centroid[1] + radius * math.cos(math.radians(theta))
+
+    return y, x
+
+def distancepointline(slope, intercept, location):
+
+    distance = abs(location[0] - slope * location[1] - intercept)/(math.sqrt(1+slope*slope))
+    return distance
+
+
+def findCentroid(image):
+    
+    Binary = image > 0
+    props = regionprops(Binary.astype('uint16'))
+    coords = props[0]['coords']
+    centroid = props[0]['centroid']
+    
+    return centroid, coords
+
+def findBottom(image, centroid, coords):
+    
+    Binary = image > 0
+    maxY = sys.float_info.min
+    for allcord in coords:
+        #find the same x coordinate on the border as the center
+        if(int(allcord[1]) == int(centroid[1])):
+                if allcord[0] > maxY:
+                   maxY = allcord[0]
+                
+    bottompoint = (maxY, centroid[1])            
+    return bottompoint
+
+def findTop(image, centroid, coords):
+    
+    Binary = image > 0
+    minY = sys.float_info.max
+    for allcord in coords:
+        #find the same x coordinate on the border as the center
+        if(int(allcord[1]) == int(centroid[1])):
+                if allcord[0] < minY:
+                   minY = allcord[0]
+                
+    toppoint = (minY, centroid[1])            
+    return toppoint
 def show_peak(onedimg, frequ, veto_frequ, threshold = 0.005):
 
     peaks, _ = find_peaks(onedimg, threshold = threshold)
