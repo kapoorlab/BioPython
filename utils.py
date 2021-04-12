@@ -12,6 +12,12 @@ import warnings
 from skimage.transform import (hough_line, hough_line_peaks,
                                probabilistic_hough_line)
 from scipy.fftpack import fftfreq
+from PIL import Image
+from bs4 import BeautifulSoup
+import urllib.parse
+from urllib.request import urlopen,Request
+import random
+from IPython.display import display
 from tifffile import imsave
 from scipy.ndimage.morphology import binary_fill_holes
 from scipy.ndimage.measurements import find_objects
@@ -78,6 +84,32 @@ def Distance(locationA, locationB, ndim):
 def sortXY(elem):
     
     return elem[0]
+    
+def ErrorMeassgeCats():
+    Urls = ["https://www.reshot.com/free-stock-photos/cat/","https://www.reshot.com/free-stock-photos/kitten/"]
+    url = random.choice(Urls)
+    requester = {'User-Agent': 'Mozilla/5.0'}
+    req=Request(url,headers=requester)
+    u =urlopen(req)
+
+
+    soup = BeautifulSoup(u.read())
+
+    links = soup.find_all('a')
+
+    images =[]
+    for img in soup.findAll('img'):
+      images.append(img.get('src'))
+    img=random.choice(images)
+    print(img)
+    urllib.request.urlretrieve(img, "error.png")  
+    try:
+        img = Image.open("error.png")
+        print("You have an error in the code, enjoy looking at this picture and contact your ground control to major Tom")
+        img.show()
+    except:
+        raise ValueError("No you are wrong")
+    
     
 def Tsurff(Raw, Seg, theta, TimeUnit):
     SegImage = imread(Seg)
