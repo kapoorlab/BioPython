@@ -46,6 +46,7 @@ import napari
 import os
 import pandas as pd
 import glob
+import warnings
 from scipy.stats import norm
 from scipy.optimize import curve_fit
 from lmfit import Model
@@ -72,7 +73,7 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 org = (50, 50) 
 # fontScale 
 fontScale = 1
- 
+warnings.filterwarnings("ignore") 
 color = (255, 255, 0) 
 thickness = 1
 def Distance(locationA, locationB, ndim):
@@ -105,8 +106,9 @@ def ErrorMeassgeCats():
     urllib.request.urlretrieve(img, "error.png")  
     try:
         img = Image.open("error.png")
+        display(img)
         print("You have an error in the code, enjoy looking at this picture and contact your ground control to major Tom")
-        img.show()
+        #img.show()
     except:
         raise ValueError("No you are wrong")
     
