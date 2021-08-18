@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 from tifffile import imread, imwrite
@@ -17,13 +17,14 @@ from scipy import ndimage
 from skimage.measure import label, regionprops
 
 
-# In[2]:
+# In[ ]:
 
 
 def erode_labels(segmentation, erosion_iterations):
     # create empty list where the eroded masks can be saved to
     list_of_eroded_masks = list()
     regions = regionprops(segmentation)
+    erode = np.zeros(segmentation.shape)
     def erode_mask(segmentation_labels, label_id, erosion_iterations):
         
         only_current_label_id = np.where(segmentation_labels == label_id, 1, 0)
@@ -33,14 +34,10 @@ def erode_labels(segmentation, erosion_iterations):
 
     for i in range(len(regions)):
         label_id = regions[i].label
-        list_of_eroded_masks.append(erode_mask(segmentation, label_id, erosion_iterations))
+        erode = erode + erode_mask(segmentation, label_id, erosion_iterations)
 
     # convert list of numpy arrays to stacked numpy array
-    final_array = np.stack(list_of_eroded_masks)
-
-    # max_IP to reduce the stack of arrays, each containing one labelled region, to a single 2D np array. 
-    final_array_labelled = np.sum(final_array, axis = 0)
-    return(final_array_labelled)
+    return erode
 
 
 # In[ ]:
